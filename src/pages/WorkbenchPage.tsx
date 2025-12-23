@@ -98,12 +98,68 @@ export function WorkbenchPage() {
     dispatch({ type: 'UPDATE_SUBMISSION', payload: recalculatedSubmission });
   };
 
-  const handleAdvanceSubstage = (submissionId: string) => {
+  // Calculate average confidence for a submission at current stage
+  const calculateStageConfidence = (sub: Submission): number => {
+    const fields: number[] = [];
+    
+    if (sub.stage === 'intake') {
+      // Intake confidence based on insured and controls fields
+      fields.push(
+        sub.insured.name.confidence,
+        sub.insured.industry.confidence,
+        sub.insured.annualRevenue.confidence,
+        sub.controls.hasEDR.confidence,
+        sub.controls.hasMFA.confidence,
+        sub.controls.hasSOC2.confidence,
+      );
+    } else if (sub.stage === 'assignment') {
+      // Assignment confidence
+      fields.push(sub.confidence);
+    } else if (sub.stage === 'underwriting' && sub.riskProfile) {
+      // UW confidence based on risk profile
+      fields.push(
+        sub.riskProfile.overallScore.confidence,
+        sub.riskProfile.controlsScore.confidence,
+        sub.riskProfile.threatExposure.confidence,
+      );
+    }
+    
+    if (fields.length === 0) return sub.confidence;
+    return Math.round(fields.reduce((a, b) => a + b, 0) / fields.length);
+  };
+
+  // Check if submission has any low confidence fields requiring review
+  const hasLowConfidenceFields = (sub: Submission): { hasLow: boolean; reason: string } => {
+    const threshold = 70; // Below 70% requires human review
+    
+    if (sub.stage === 'intake') {
+      if (sub.controls.hasEDR.confidence < threshold) {
+        return { hasLow: true, reason: `EDR status unclear (${sub.controls.hasEDR.confidence}% confidence)` };
+      }
+      if (sub.controls.hasMFA.confidence < threshold) {
+        return { hasLow: true, reason: `MFA status unclear (${sub.controls.hasMFA.confidence}% confidence)` };
+      }
+      if (sub.insured.annualRevenue.confidence < threshold) {
+        return { hasLow: true, reason: `Revenue uncertain (${sub.insured.annualRevenue.confidence}% confidence)` };
+      }
+    }
+    
+    if (sub.stage === 'underwriting' && sub.riskProfile) {
+      if (sub.riskProfile.overallScore.confidence < threshold) {
+        return { hasLow: true, reason: `Risk score uncertain (${sub.riskProfile.overallScore.confidence}% confidence)` };
+      }
+    }
+    
+    return { hasLow: false, reason: '' };
+  };
+
+  const handleAdvanceSubstage = (submissionId: string, autoProgress = false) => {
     const sub = state.submissions.find(s => s.id === submissionId);
     if (!sub) return;
 
     let newStage = sub.stage;
     let newSubstage = sub.substage;
+    let shouldAutoProgress = false;
 
     // Intake substage progression
     if (sub.stage === 'intake') {
@@ -114,6 +170,7 @@ export function WorkbenchPage() {
       } else {
         newStage = 'assignment';
         newSubstage = 'workload_balance';
+        shouldAutoProgress = true; // Check if assignment can auto-progress
       }
     }
     // Assignment substage progression
@@ -125,6 +182,7 @@ export function WorkbenchPage() {
       } else {
         newStage = 'underwriting';
         newSubstage = 'risk_profiling';
+        shouldAutoProgress = true; // Check if UW can auto-progress
       }
     }
     // Underwriting substage progression
@@ -142,6 +200,81 @@ export function WorkbenchPage() {
       type: 'ADVANCE_STAGE', 
       payload: { submissionId, newStage, substage: newSubstage }
     });
+
+    // After dispatch, check for auto-progression to next stage
+    if (shouldAutoProgress) {
+      // Get updated submission to check confidence
+      setTimeout(() => {
+        const updatedSub = state.submissions.find(s => s.id === submissionId);
+        if (updatedSub) {
+          const { hasLow } = hasLowConfidenceFields({...updatedSub, stage: newStage as any, substage: newSubstage as any});
+          const avgConfidence = calculateStageConfidence({...updatedSub, stage: newStage as any});
+          
+          // If high confidence (>=80) and no low fields, auto-progress through the new stage
+          if (avgConfidence >= 80 && !hasLow) {
+            console.log(`Auto-progressing ${submissionId} through ${newStage} (confidence: ${avgConfidence}%)`);
+            // Trigger auto-advancement for the new stage
+            handleAutoProgressStage(submissionId, newStage as any, newSubstage as any);
+          }
+        }
+      }, 100);
+    }
+  };
+
+  // Auto-progress through an entire stage if confidence is high
+  const handleAutoProgressStage = (submissionId: string, stage: string, currentSubstage: string) => {
+    const sub = state.submissions.find(s => s.id === submissionId);
+    if (!sub) return;
+
+    const { hasLow, reason } = hasLowConfidenceFields(sub);
+    if (hasLow) {
+      // Update submission to require human review
+      const updatedSub: Submission = {
+        ...sub,
+        requiresHumanReview: true,
+        reviewReason: reason,
+      };
+      dispatch({ type: 'UPDATE_SUBMISSION', payload: updatedSub });
+      return;
+    }
+
+    // Auto-progress through substages
+    if (stage === 'assignment') {
+      const assignmentOrder: AssignmentSubstage[] = ['workload_balance', 'specialist_match', 'assignment_complete'];
+      const currentIdx = assignmentOrder.indexOf(currentSubstage as AssignmentSubstage);
+      
+      if (currentIdx < assignmentOrder.length - 1) {
+        // Auto-assign underwriter if needed
+        if (!sub.assignedUnderwriter && state.underwriters.length > 0) {
+          // Find best match underwriter
+          const bestUW = state.underwriters
+            .filter(uw => uw.workload < uw.maxWorkload)
+            .sort((a, b) => b.bindRatio - a.bindRatio)[0];
+          
+          if (bestUW) {
+            handleAssignUnderwriter(submissionId, bestUW);
+          }
+        }
+        
+        // Progress through assignment substages
+        for (let i = currentIdx; i < assignmentOrder.length - 1; i++) {
+          setTimeout(() => {
+            dispatch({
+              type: 'ADVANCE_STAGE',
+              payload: { submissionId, newStage: 'assignment', substage: assignmentOrder[i + 1] }
+            });
+          }, (i - currentIdx + 1) * 200);
+        }
+        
+        // Then move to underwriting
+        setTimeout(() => {
+          dispatch({
+            type: 'ADVANCE_STAGE',
+            payload: { submissionId, newStage: 'underwriting', substage: 'risk_profiling' }
+          });
+        }, (assignmentOrder.length - currentIdx) * 200 + 100);
+      }
+    }
   };
 
   const handleAssignUnderwriter = (submissionId: string, underwriter: Underwriter) => {

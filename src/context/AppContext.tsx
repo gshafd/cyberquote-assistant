@@ -15,6 +15,7 @@ import {
   knowledgeBases,
   workbenchMetrics,
   initialSubmissions,
+  initialFeedbackLog,
 } from '@/data/mockData';
 
 interface AppState {
@@ -43,7 +44,7 @@ const initialState: AppState = {
   emails: brokerEmails,
   submissions: initialSubmissions,
   selectedSubmissionId: null,
-  feedbackLog: [],
+  feedbackLog: initialFeedbackLog,
   metrics: workbenchMetrics,
   knowledgeBases,
   underwriters,

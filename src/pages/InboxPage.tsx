@@ -62,6 +62,23 @@ export function InboxPage() {
 
     const producer = producers.find(p => p.email === email.from) || producers[0];
     
+    // Calculate overall confidence based on key fields
+    const keyConfidences = [
+      insured.name.confidence,
+      insured.industry.confidence,
+      insured.annualRevenue.confidence,
+      controls.hasEDR.confidence,
+      controls.hasMFA.confidence,
+      controls.hasSOC2.confidence,
+    ];
+    const avgConfidence = Math.round(keyConfidences.reduce((a, b) => a + b, 0) / keyConfidences.length);
+    
+    // Check for low confidence fields (below 70%)
+    const hasLowConfidence = keyConfidences.some(c => c < 70);
+    const lowConfidenceField = controls.hasEDR.confidence < 70 ? 'EDR status' : 
+      controls.hasMFA.confidence < 70 ? 'MFA status' : 
+      insured.annualRevenue.confidence < 70 ? 'Annual revenue' : null;
+    
     const submission: Submission = {
       id: `sub-${Date.now()}`,
       scenarioId,
@@ -83,9 +100,9 @@ export function InboxPage() {
         description: 'Submission created from email ingestion',
       }],
       feedbackLog: [],
-      confidence: insured.name.confidence,
-      requiresHumanReview: controls.hasEDR.confidence < 60,
-      reviewReason: controls.hasEDR.confidence < 60 ? 'Low confidence on EDR status' : undefined,
+      confidence: avgConfidence,
+      requiresHumanReview: hasLowConfidence,
+      reviewReason: hasLowConfidence ? `Low confidence on ${lowConfidenceField} - requires manual verification` : undefined,
     };
 
     dispatch({ type: 'ADD_SUBMISSION', payload: submission });
@@ -100,9 +117,9 @@ export function InboxPage() {
   const unreadCount = state.emails.filter(e => !e.isRead && !e.isIngested).length;
 
   return (
-    <div className="flex h-full gap-4">
+    <div className="flex gap-4" style={{ height: 'calc(100vh - 10rem)' }}>
       {/* Email List */}
-      <Card className="w-96 flex-shrink-0">
+      <Card className="w-96 flex-shrink-0 flex flex-col">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -114,8 +131,8 @@ export function InboxPage() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="h-[calc(100vh-16rem)]">
+        <CardContent className="p-0 flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
             {state.emails.map(email => (
               <div
                 key={email.id}
