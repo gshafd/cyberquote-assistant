@@ -13,6 +13,7 @@ import {
   CoverageRecommendation,
   PricingDetails,
   Quote,
+  FeedbackEntry,
 } from '@/types/underwriting';
 
 // Helper to create AI fields
@@ -659,6 +660,85 @@ export const workbenchMetrics: WorkbenchMetrics = {
   bindRatio: 0.68,
   declineRatio: 0.12,
 };
+
+// Initial feedback entries for demo
+export const initialFeedbackLog: FeedbackEntry[] = [
+  {
+    id: 'fb-001',
+    submissionId: 'sub-acme-001',
+    editedAt: '2024-12-21T14:23:00Z',
+    editedBy: 'John Smith',
+    fieldPath: 'controls.hasEDR',
+    fieldLabel: 'EDR Deployed',
+    originalValue: false,
+    aiConfidence: 45,
+    newValue: true,
+    feedbackComment: 'Confirmed EDR deployment with client - CrowdStrike Falcon installed last week',
+    stage: 'intake',
+    substage: 'initial_validation',
+    downstreamImpact: ['riskProfile.controlsScore', 'pricing.premium'],
+  },
+  {
+    id: 'fb-002',
+    submissionId: 'sub-zenith-001',
+    editedAt: '2024-12-20T09:45:00Z',
+    editedBy: 'Lisa Park',
+    fieldPath: 'insured.annualRevenue',
+    fieldLabel: 'Annual Revenue',
+    originalValue: 115000000,
+    aiConfidence: 78,
+    newValue: 120000000,
+    feedbackComment: 'Updated per latest financials received from broker',
+    stage: 'underwriting',
+    substage: 'risk_profiling',
+    downstreamImpact: ['pricing.basePremium', 'pricing.premium'],
+  },
+  {
+    id: 'fb-003',
+    submissionId: 'sub-edgecase-001',
+    editedAt: '2024-12-19T16:30:00Z',
+    editedBy: 'Amanda Foster',
+    fieldPath: 'insured.industry',
+    fieldLabel: 'Industry',
+    originalValue: 'Technology Services',
+    aiConfidence: 72,
+    newValue: 'Vendor Risk Management',
+    feedbackComment: 'Reclassified based on primary business activity - third-party risk assessment',
+    stage: 'underwriting',
+    substage: 'rules_check',
+    downstreamImpact: ['riskProfile.industryRisk', 'coverages', 'pricing'],
+  },
+  {
+    id: 'fb-004',
+    submissionId: 'sub-acme-001',
+    editedAt: '2024-12-18T11:15:00Z',
+    editedBy: 'Sarah Johnson',
+    fieldPath: 'insured.employeeCount',
+    fieldLabel: 'Employee Count',
+    originalValue: 250,
+    aiConfidence: 68,
+    newValue: 280,
+    feedbackComment: 'Corrected per updated ACORD received - they had recent hiring',
+    stage: 'intake',
+    substage: 'document_parsing',
+    downstreamImpact: ['pricing.exposure'],
+  },
+  {
+    id: 'fb-005',
+    submissionId: 'sub-zenith-001',
+    editedAt: '2024-12-17T10:00:00Z',
+    editedBy: 'Mike Rodriguez',
+    fieldPath: 'assignedUW',
+    fieldLabel: 'Assigned Underwriter',
+    originalValue: 'James Wilson',
+    aiConfidence: 75,
+    newValue: 'Lisa Park',
+    feedbackComment: 'Reassigned to Lisa - better expertise in fintech and lower workload',
+    stage: 'assignment',
+    substage: 'specialist_match',
+    downstreamImpact: [],
+  },
+];
 
 // Initial submissions based on scenarios
 export const initialSubmissions: Submission[] = [];

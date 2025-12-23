@@ -47,12 +47,16 @@ export function FeedbackLog({
           >
             <div className="flex items-start justify-between gap-4 mb-3">
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  {entry.stage}
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  {entry.substage}
-                </Badge>
+                {entry.stage && (
+                  <Badge variant="outline" className="text-xs capitalize">
+                    {entry.stage}
+                  </Badge>
+                )}
+                {entry.substage && (
+                  <Badge variant="secondary" className="text-xs">
+                    {entry.substage.replace(/_/g, ' ')}
+                  </Badge>
+                )}
               </div>
               {showSubmissionLink && (
                 <Button
@@ -88,7 +92,7 @@ export function FeedbackLog({
                 </div>
               )}
 
-              {entry.downstreamImpact.length > 0 && (
+              {entry.downstreamImpact && entry.downstreamImpact.length > 0 && (
                 <div className="flex items-start gap-2 mt-2">
                   <GitBranch size={14} className="text-warning mt-0.5" />
                   <div className="text-xs text-warning">

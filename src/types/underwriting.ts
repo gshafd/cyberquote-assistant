@@ -191,14 +191,20 @@ export interface FeedbackEntry {
   submissionId: string;
   fieldPath: string;
   fieldLabel: string;
-  originalValue: string;
-  newValue: string;
+  originalValue: string | number | boolean;
+  newValue: string | number | boolean;
   editedBy: string;
   editedAt: string;
   feedbackComment: string;
-  stage: SubmissionStage;
-  substage: string;
-  downstreamImpact: string[];
+  stage?: SubmissionStage;
+  substage?: string;
+  downstreamImpact?: string[];
+  aiConfidence?: number;
+  // Legacy support
+  user?: string;
+  role?: TeamRole;
+  comment?: string;
+  timestamp?: string;
 }
 
 export interface Submission {

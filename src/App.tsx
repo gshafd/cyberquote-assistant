@@ -98,7 +98,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main Content */}
-      <main className="container px-4 py-6">
+      <main className="container px-4 py-6 h-[calc(100vh-5rem)]">
         {children}
       </main>
     </div>
