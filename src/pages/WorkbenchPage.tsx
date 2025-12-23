@@ -4,52 +4,167 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StageProgress } from '@/components/StageProgress';
 import { ConfidenceBadge } from '@/components/ConfidenceBadge';
-import { ThreatSignals } from '@/components/ThreatSignals';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { IntakeSubstages } from '@/components/substages/IntakeSubstages';
+import { AssignmentSubstages } from '@/components/substages/AssignmentSubstages';
+import { UnderwritingSubstages } from '@/components/substages/UnderwritingSubstages';
 import { 
-  Building2, 
-  Shield, 
-  DollarSign, 
   FileCheck,
   ArrowRight,
   AlertTriangle,
   CheckCircle,
-  User
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { 
+  Submission, 
+  IntakeSubstage, 
+  AssignmentSubstage, 
+  UnderwritingSubstage,
+  Underwriter,
+  FeedbackEntry,
+} from '@/types/underwriting';
 
 export function WorkbenchPage() {
   const { state, dispatch } = useAppState();
   
+  // Filter submissions based on role visibility
   const roleSubmissions = state.submissions.filter(s => {
-    if (state.currentRole === 'intake') return s.stage === 'intake';
-    if (state.currentRole === 'assignment') return s.stage === 'assignment';
-    if (state.currentRole === 'underwriting') return ['underwriting', 'quoted'].includes(s.stage);
-    return true;
+    if (state.currentRole === 'intake') {
+      // Intake only sees submissions in intake stage
+      return s.stage === 'intake';
+    }
+    if (state.currentRole === 'assignment') {
+      // Assignment sees submissions in assignment stage OR completed intake (for reference)
+      return s.stage === 'assignment' || (s.stage !== 'intake' && s.stage !== 'inbox');
+    }
+    if (state.currentRole === 'underwriting') {
+      // UW sees submissions in underwriting or quoted/bound stages
+      return ['underwriting', 'quoted', 'bound'].includes(s.stage);
+    }
+    return false;
   });
 
   const selectedSubmission = state.submissions.find(s => s.id === state.selectedSubmissionId);
 
-  const handleAdvanceStage = (submissionId: string) => {
+  // Check if current role can view the selected submission details
+  const canViewDetails = (sub: Submission): boolean => {
+    if (state.currentRole === 'intake') {
+      return sub.stage === 'intake';
+    }
+    if (state.currentRole === 'assignment') {
+      return sub.stage === 'assignment' || sub.stage === 'underwriting' || sub.stage === 'quoted' || sub.stage === 'bound';
+    }
+    if (state.currentRole === 'underwriting') {
+      return ['underwriting', 'quoted', 'bound'].includes(sub.stage);
+    }
+    return false;
+  };
+
+  // Check if current role can edit the submission
+  const canEdit = (sub: Submission): boolean => {
+    if (state.currentRole === 'intake') return sub.stage === 'intake';
+    if (state.currentRole === 'assignment') return sub.stage === 'assignment';
+    if (state.currentRole === 'underwriting') return ['underwriting', 'quoted'].includes(sub.stage);
+    return false;
+  };
+
+  const handleFieldEdit = (submissionId: string, fieldPath: string, newValue: any, label: string, comment: string) => {
+    const sub = state.submissions.find(s => s.id === submissionId);
+    if (!sub) return;
+
+    // Create feedback entry
+    const feedbackEntry: FeedbackEntry = {
+      id: `fb-${Date.now()}`,
+      submissionId,
+      fieldPath,
+      fieldLabel: label,
+      originalValue: getNestedValue(sub, fieldPath)?.toString() || '',
+      newValue: String(newValue),
+      editedBy: 'Current User',
+      editedAt: new Date().toISOString(),
+      feedbackComment: comment,
+      stage: sub.stage,
+      substage: sub.substage,
+      downstreamImpact: calculateDownstreamImpact(fieldPath),
+    };
+
+    dispatch({ type: 'ADD_FEEDBACK', payload: feedbackEntry });
+
+    // Update the submission with edited field
+    const updatedSubmission = updateNestedField(sub, fieldPath, newValue);
+    
+    // Recalculate downstream values if needed
+    const recalculatedSubmission = recalculateDownstream(updatedSubmission, fieldPath);
+    
+    dispatch({ type: 'UPDATE_SUBMISSION', payload: recalculatedSubmission });
+  };
+
+  const handleAdvanceSubstage = (submissionId: string) => {
     const sub = state.submissions.find(s => s.id === submissionId);
     if (!sub) return;
 
     let newStage = sub.stage;
     let newSubstage = sub.substage;
 
+    // Intake substage progression
     if (sub.stage === 'intake') {
-      newStage = 'assignment';
-      newSubstage = 'workload_balance';
-    } else if (sub.stage === 'assignment') {
-      newStage = 'underwriting';
-      newSubstage = 'risk_profiling';
+      const intakeOrder: IntakeSubstage[] = ['document_parsing', 'producer_verification', 'initial_validation', 'intake_complete'];
+      const currentIdx = intakeOrder.indexOf(sub.substage as IntakeSubstage);
+      if (currentIdx < intakeOrder.length - 1) {
+        newSubstage = intakeOrder[currentIdx + 1];
+      } else {
+        newStage = 'assignment';
+        newSubstage = 'workload_balance';
+      }
+    }
+    // Assignment substage progression
+    else if (sub.stage === 'assignment') {
+      const assignmentOrder: AssignmentSubstage[] = ['workload_balance', 'specialist_match', 'assignment_complete'];
+      const currentIdx = assignmentOrder.indexOf(sub.substage as AssignmentSubstage);
+      if (currentIdx < assignmentOrder.length - 1) {
+        newSubstage = assignmentOrder[currentIdx + 1];
+      } else {
+        newStage = 'underwriting';
+        newSubstage = 'risk_profiling';
+      }
+    }
+    // Underwriting substage progression
+    else if (sub.stage === 'underwriting') {
+      const uwOrder: UnderwritingSubstage[] = ['risk_profiling', 'rules_check', 'coverage_determination', 'pricing', 'quote_draft', 'quote_review', 'binding'];
+      const currentIdx = uwOrder.indexOf(sub.substage as UnderwritingSubstage);
+      if (currentIdx < uwOrder.length - 1) {
+        newSubstage = uwOrder[currentIdx + 1];
+      } else {
+        newStage = 'quoted';
+      }
     }
 
     dispatch({ 
       type: 'ADVANCE_STAGE', 
       payload: { submissionId, newStage, substage: newSubstage }
     });
+  };
+
+  const handleAssignUnderwriter = (submissionId: string, underwriter: Underwriter) => {
+    const sub = state.submissions.find(s => s.id === submissionId);
+    if (!sub) return;
+
+    const updatedSubmission: Submission = {
+      ...sub,
+      assignedUnderwriter: underwriter,
+      history: [
+        ...sub.history,
+        {
+          id: `event-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          type: 'assignment',
+          actor: 'Assignment Team',
+          actorRole: 'assignment',
+          description: `Assigned to ${underwriter.name}`,
+        },
+      ],
+    };
+
+    dispatch({ type: 'UPDATE_SUBMISSION', payload: updatedSubmission });
   };
 
   return (
@@ -83,6 +198,9 @@ export function WorkbenchPage() {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Badge variant="outline" className="text-xs capitalize">
+                      {sub.stage}
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
                       {sub.substage.replace(/_/g, ' ')}
                     </Badge>
                   </div>
@@ -90,6 +208,13 @@ export function WorkbenchPage() {
                     <div className="mt-2 flex items-center gap-1 text-xs text-warning">
                       <AlertTriangle size={12} />
                       Review required
+                    </div>
+                  )}
+                  {/* Show completion status for assignment role viewing past stages */}
+                  {state.currentRole === 'assignment' && sub.stage !== 'assignment' && (
+                    <div className="mt-2 flex items-center gap-1 text-xs text-success">
+                      <CheckCircle size={12} />
+                      {sub.stage === 'underwriting' || sub.stage === 'quoted' || sub.stage === 'bound' ? 'In UW Review' : 'Completed'}
                     </div>
                   )}
                 </div>
@@ -100,7 +225,7 @@ export function WorkbenchPage() {
       </Card>
 
       {/* Submission Detail */}
-      {selectedSubmission ? (
+      {selectedSubmission && canViewDetails(selectedSubmission) ? (
         <div className="flex-1 space-y-4 overflow-auto">
           <Card>
             <CardHeader>
@@ -114,9 +239,9 @@ export function WorkbenchPage() {
                     {selectedSubmission.insured.industry.value} • {selectedSubmission.insured.city.value}, {selectedSubmission.insured.state.value}
                   </p>
                 </div>
-                <Button onClick={() => handleAdvanceStage(selectedSubmission.id)}>
-                  Advance Stage <ArrowRight size={16} className="ml-2" />
-                </Button>
+                {!canEdit(selectedSubmission) && (
+                  <Badge variant="outline" className="text-muted-foreground">Read Only</Badge>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -127,99 +252,63 @@ export function WorkbenchPage() {
             </CardContent>
           </Card>
 
-          <Tabs defaultValue="insured" className="w-full">
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="insured"><Building2 size={14} className="mr-2" />Insured</TabsTrigger>
-              <TabsTrigger value="controls"><Shield size={14} className="mr-2" />Controls</TabsTrigger>
-              <TabsTrigger value="risk"><AlertTriangle size={14} className="mr-2" />Risk</TabsTrigger>
-              <TabsTrigger value="pricing"><DollarSign size={14} className="mr-2" />Pricing</TabsTrigger>
-            </TabsList>
+          {/* Role-specific substage views */}
+          {selectedSubmission.stage === 'intake' && state.currentRole === 'intake' && (
+            <IntakeSubstages
+              submission={selectedSubmission}
+              currentSubstage={selectedSubmission.substage as IntakeSubstage}
+              onFieldEdit={(fieldPath, newValue, label, comment) => 
+                handleFieldEdit(selectedSubmission.id, fieldPath, newValue, label, comment)
+              }
+              onAdvanceSubstage={() => handleAdvanceSubstage(selectedSubmission.id)}
+            />
+          )}
 
-            <TabsContent value="insured">
-              <Card>
-                <CardContent className="pt-6 grid grid-cols-2 gap-4">
-                  {Object.entries({
-                    'Company Name': selectedSubmission.insured.name,
-                    'Industry': selectedSubmission.insured.industry,
-                    'Revenue': { ...selectedSubmission.insured.annualRevenue, value: `$${(selectedSubmission.insured.annualRevenue.value / 1000000).toFixed(1)}M` },
-                    'Employees': selectedSubmission.insured.employeeCount,
-                    'Website': selectedSubmission.insured.website,
-                    'SIC Code': selectedSubmission.insured.sicCode,
-                  }).map(([label, field]) => (
-                    <div key={label} className="space-y-1">
-                      <p className="text-xs text-muted-foreground uppercase">{label}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{String(field.value)}</span>
-                        <ConfidenceBadge score={field.confidence} size="sm" />
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </TabsContent>
+          {selectedSubmission.stage === 'assignment' && state.currentRole === 'assignment' && (
+            <AssignmentSubstages
+              submission={selectedSubmission}
+              currentSubstage={selectedSubmission.substage as AssignmentSubstage}
+              underwriters={state.underwriters}
+              onAssignUnderwriter={(uw) => handleAssignUnderwriter(selectedSubmission.id, uw)}
+              onAdvanceSubstage={() => handleAdvanceSubstage(selectedSubmission.id)}
+            />
+          )}
 
-            <TabsContent value="controls">
-              <Card>
-                <CardContent className="pt-6 grid grid-cols-3 gap-4">
-                  {[
-                    { label: 'MFA', field: selectedSubmission.controls.hasMFA },
-                    { label: 'EDR', field: selectedSubmission.controls.hasEDR },
-                    { label: 'SOC2', field: selectedSubmission.controls.hasSOC2 },
-                    { label: 'Backups', field: selectedSubmission.controls.hasBackups },
-                    { label: 'IR Plan', field: selectedSubmission.controls.hasIncidentResponsePlan },
-                    { label: 'Training', field: selectedSubmission.controls.hasSecurityTraining },
-                  ].map(({ label, field }) => (
-                    <div key={label} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <span className="text-sm">{label}</span>
-                      <div className="flex items-center gap-2">
-                        {field.value ? (
-                          <CheckCircle size={16} className="text-success" />
-                        ) : (
-                          <AlertTriangle size={16} className="text-destructive" />
-                        )}
-                        <ConfidenceBadge score={field.confidence} size="sm" />
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </TabsContent>
+          {['underwriting', 'quoted'].includes(selectedSubmission.stage) && state.currentRole === 'underwriting' && (
+            <UnderwritingSubstages
+              submission={selectedSubmission}
+              currentSubstage={selectedSubmission.substage as UnderwritingSubstage}
+              onFieldEdit={(fieldPath, newValue, label, comment) => 
+                handleFieldEdit(selectedSubmission.id, fieldPath, newValue, label, comment)
+              }
+              onAdvanceSubstage={() => handleAdvanceSubstage(selectedSubmission.id)}
+            />
+          )}
 
-            <TabsContent value="risk">
-              <Card>
-                <CardContent className="pt-6 space-y-6">
-                  {selectedSubmission.riskProfile && (
-                    <>
-                      <div className="grid grid-cols-4 gap-4">
-                        {[
-                          { label: 'Overall', score: selectedSubmission.riskProfile.overallScore },
-                          { label: 'Industry', score: selectedSubmission.riskProfile.industryRisk },
-                          { label: 'Controls', score: selectedSubmission.riskProfile.controlsScore },
-                          { label: 'Threat', score: selectedSubmission.riskProfile.threatExposure },
-                        ].map(({ label, score }) => (
-                          <div key={label} className="text-center p-4 bg-muted/30 rounded-lg">
-                            <p className="text-xs text-muted-foreground mb-2">{label} Risk</p>
-                            <p className="text-2xl font-bold">{score.value}</p>
-                            <ConfidenceBadge score={score.confidence} size="sm" />
-                          </div>
-                        ))}
-                      </div>
-                      <ThreatSignals signals={selectedSubmission.riskProfile.threatSignals} />
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="pricing">
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-muted-foreground">Pricing details will appear after risk assessment</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          {/* Read-only view for assignment team viewing UW stage submissions */}
+          {state.currentRole === 'assignment' && selectedSubmission.stage !== 'assignment' && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center text-muted-foreground">
+                  <CheckCircle size={48} className="mx-auto mb-4 text-success opacity-50" />
+                  <p className="font-medium">Assignment Completed</p>
+                  <p className="text-sm mt-1">
+                    This submission has been assigned to {selectedSubmission.assignedUnderwriter?.name || 'an underwriter'} 
+                    and is currently in the {selectedSubmission.stage} stage.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
+      ) : selectedSubmission && !canViewDetails(selectedSubmission) ? (
+        <Card className="flex-1 flex items-center justify-center">
+          <div className="text-center text-muted-foreground">
+            <AlertTriangle size={48} className="mx-auto mb-4 opacity-30" />
+            <p className="font-medium">Access Restricted</p>
+            <p className="text-sm mt-1">This submission is not accessible in your current role</p>
+          </div>
+        </Card>
       ) : (
         <Card className="flex-1 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
@@ -230,4 +319,108 @@ export function WorkbenchPage() {
       )}
     </div>
   );
+}
+
+// Helper functions
+function getNestedValue(obj: any, path: string): any {
+  return path.split('.').reduce((acc, part) => acc?.[part], obj)?.value;
+}
+
+function updateNestedField(obj: any, path: string, newValue: any): any {
+  const parts = path.split('.');
+  const result = JSON.parse(JSON.stringify(obj));
+  let current = result;
+  
+  for (let i = 0; i < parts.length - 1; i++) {
+    current = current[parts[i]];
+  }
+  
+  const field = current[parts[parts.length - 1]];
+  if (field && typeof field === 'object' && 'value' in field) {
+    field.originalValue = field.value;
+    field.value = newValue;
+    field.isEdited = true;
+    field.editedBy = 'Current User';
+    field.editedAt = new Date().toISOString();
+  }
+  
+  return result;
+}
+
+function calculateDownstreamImpact(fieldPath: string): string[] {
+  const impacts: Record<string, string[]> = {
+    'controls.hasEDR': ['Risk Score', 'Controls Score', 'Pricing Loadings', 'Coverage Conditions'],
+    'controls.hasMFA': ['Controls Score', 'Risk Score'],
+    'controls.hasSOC2': ['Controls Score', 'Pricing Credits'],
+    'insured.annualRevenue': ['Base Premium', 'Rate per Million'],
+    'insured.employeeCount': ['Base Premium', 'Risk Score'],
+    'riskProfile.overallScore': ['Pricing', 'Coverage Recommendations'],
+    'riskProfile.controlsScore': ['Overall Risk Score', 'Pricing Loadings'],
+    'quote.pricing.basePremium': ['Final Premium', 'Total Cost'],
+    'quote.pricing.finalPremium': ['Total Cost'],
+  };
+  
+  return impacts[fieldPath] || ['Downstream calculations may be affected'];
+}
+
+function recalculateDownstream(submission: Submission, fieldPath: string): Submission {
+  const result = { ...submission };
+  
+  // If EDR changed, recalculate risk scores
+  if (fieldPath === 'controls.hasEDR' && result.riskProfile) {
+    const hasEDR = result.controls.hasEDR.value;
+    const currentOverall = result.riskProfile.overallScore.value;
+    const currentControls = result.riskProfile.controlsScore.value;
+    
+    // EDR adds/removes 15 points from controls and 10 from overall
+    result.riskProfile = {
+      ...result.riskProfile,
+      controlsScore: {
+        ...result.riskProfile.controlsScore,
+        value: hasEDR ? Math.min(100, currentControls + 15) : Math.max(0, currentControls - 15),
+        isEdited: true,
+      },
+      overallScore: {
+        ...result.riskProfile.overallScore,
+        value: hasEDR ? Math.max(0, currentOverall - 10) : Math.min(100, currentOverall + 10),
+        isEdited: true,
+      },
+    };
+    
+    // Update pricing if quote exists
+    if (result.quote?.pricing) {
+      const currentLoadings = result.quote.pricing.riskLoadings;
+      if (hasEDR) {
+        // Remove EDR loading
+        result.quote.pricing.riskLoadings = currentLoadings.filter(l => !l.reason.toLowerCase().includes('edr'));
+      } else {
+        // Add EDR loading if not present
+        if (!currentLoadings.some(l => l.reason.toLowerCase().includes('edr'))) {
+          result.quote.pricing.riskLoadings = [
+            ...currentLoadings,
+            { reason: 'EDR not confirmed', amount: 8400, percentage: 20 },
+          ];
+        }
+      }
+      
+      // Recalculate final premium
+      const base = result.quote.pricing.basePremium.value;
+      const totalLoadings = result.quote.pricing.riskLoadings.reduce((sum, l) => sum + l.amount, 0);
+      const totalCredits = result.quote.pricing.credits.reduce((sum, c) => sum + c.amount, 0);
+      const finalPremium = base + totalLoadings + totalCredits;
+      
+      result.quote.pricing.finalPremium = {
+        ...result.quote.pricing.finalPremium,
+        value: finalPremium,
+        isEdited: true,
+      };
+      result.quote.pricing.totalCost = {
+        ...result.quote.pricing.totalCost,
+        value: finalPremium + result.quote.pricing.taxesAndFees,
+        isEdited: true,
+      };
+    }
+  }
+  
+  return result;
 }

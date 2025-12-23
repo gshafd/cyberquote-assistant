@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, NavLink, useLocation } from "react-router
 import { AppProvider, useAppState } from "@/context/AppContext";
 import { InboxPage } from "@/pages/InboxPage";
 import { WorkbenchPage } from "@/pages/WorkbenchPage";
+import { OpsConsolePage } from "@/pages/OpsConsolePage";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -68,6 +69,14 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                 </Button>
               )}
             </NavLink>
+            <NavLink to="/ops">
+              {({ isActive }) => (
+                <Button variant={isActive ? "secondary" : "ghost"} size="sm" className="gap-2">
+                  <Settings size={16} />
+                  Ops Console
+                </Button>
+              )}
+            </NavLink>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -103,6 +112,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<InboxPage />} />
           <Route path="/workbench" element={<WorkbenchPage />} />
+          <Route path="/ops" element={<OpsConsolePage />} />
         </Routes>
       </MainLayout>
     </BrowserRouter>

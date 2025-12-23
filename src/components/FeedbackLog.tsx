@@ -17,6 +17,7 @@ interface FeedbackLogProps {
   entries: FeedbackEntry[];
   className?: string;
   maxHeight?: string;
+  showSubmissionLink?: boolean;
   onNavigateToSubmission?: (submissionId: string) => void;
 }
 
@@ -24,6 +25,7 @@ export function FeedbackLog({
   entries, 
   className, 
   maxHeight = '400px',
+  showSubmissionLink = false,
   onNavigateToSubmission 
 }: FeedbackLogProps) {
   if (entries.length === 0) {
@@ -52,12 +54,12 @@ export function FeedbackLog({
                   {entry.substage}
                 </Badge>
               </div>
-              {onNavigateToSubmission && (
+              {showSubmissionLink && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => onNavigateToSubmission(entry.submissionId)}
+                  onClick={() => onNavigateToSubmission?.(entry.submissionId)}
                 >
                   <ExternalLink size={12} className="mr-1" />
                   View Submission
