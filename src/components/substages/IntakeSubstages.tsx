@@ -199,23 +199,29 @@ export function IntakeSubstages({ submission, currentSubstage, onFieldEdit, onAd
         </Card>
       )}
 
-      {/* Advance Button */}
-      {currentSubstage !== 'intake_complete' && (
-        <div className="flex justify-end">
+      {/* Advance Button - show for all substages including intake_complete */}
+      <div className="flex justify-end">
+        {currentSubstage !== 'intake_complete' ? (
           <Button onClick={onAdvanceSubstage}>
             {currentSubstage === 'initial_validation' ? 'Complete Intake' : 'Advance to Next Step'}
             <ArrowRight size={16} className="ml-2" />
           </Button>
-        </div>
-      )}
-
-      {currentSubstage === 'intake_complete' && (
-        <div className="p-4 bg-success/10 border border-success/30 rounded-lg text-center">
-          <CheckCircle size={24} className="mx-auto text-success mb-2" />
-          <p className="font-medium text-success">Intake Complete</p>
-          <p className="text-sm text-muted-foreground">Ready for Assignment team review</p>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-success/10 border border-success/30 rounded-lg flex items-center gap-2">
+              <CheckCircle size={20} className="text-success" />
+              <div>
+                <p className="font-medium text-success text-sm">Intake Complete</p>
+                <p className="text-xs text-muted-foreground">Ready for Assignment</p>
+              </div>
+            </div>
+            <Button onClick={onAdvanceSubstage} className="bg-gradient-primary">
+              Send to Assignment
+              <ArrowRight size={16} className="ml-2" />
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

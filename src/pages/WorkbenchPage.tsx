@@ -87,99 +87,87 @@ export function WorkbenchPage() {
       const avgConfidence = calculateStageConfidence(sub);
       const { hasLow, reason } = hasLowConfidenceFields(sub);
       
+      // High confidence threshold for auto-progression
+      const confidenceThreshold = 75;
+      const isHighConfidence = !hasLow && avgConfidence >= confidenceThreshold;
+      
       // Check if we should auto-progress from intake_complete to assignment
-      if (sub.stage === 'intake' && sub.substage === 'intake_complete') {
-        if (!hasLow && avgConfidence >= 75) {
-          autoProgressingRef.current.add(sub.id);
-          toast.success(`Auto-advancing ${sub.insured.name.value}`, {
-            description: `High confidence (${avgConfidence}%) - moving to Assignment`,
-            icon: <Zap className="text-primary" />,
-          });
-          
-          setTimeout(() => {
-            dispatch({
-              type: 'ADVANCE_STAGE',
-              payload: { submissionId: sub.id, newStage: 'assignment', substage: 'workload_balance' }
-            });
-            autoProgressingRef.current.delete(sub.id);
-          }, 500);
-        } else if (hasLow && !sub.requiresHumanReview) {
-          // Mark for human review
+      if (sub.stage === 'intake' && sub.substage === 'intake_complete' && isHighConfidence) {
+        autoProgressingRef.current.add(sub.id);
+        toast.success(`Auto-advancing ${sub.insured.name.value}`, {
+          description: `High confidence (${avgConfidence}%) - moving to Assignment`,
+          icon: <Zap className="text-primary" />,
+        });
+        
+        setTimeout(() => {
           dispatch({
-            type: 'UPDATE_SUBMISSION',
-            payload: { ...sub, requiresHumanReview: true, reviewReason: reason }
+            type: 'ADVANCE_STAGE',
+            payload: { submissionId: sub.id, newStage: 'assignment', substage: 'workload_balance' }
           });
-          toast.warning(`Human review required for ${sub.insured.name.value}`, {
-            description: reason,
-          });
-        }
+          autoProgressingRef.current.delete(sub.id);
+        }, 800);
+        return;
       }
       
-      // Check if we should auto-progress through assignment
-      if (sub.stage === 'assignment' && !hasLow && avgConfidence >= 75) {
+      // Mark for review if low confidence and at intake_complete
+      if (sub.stage === 'intake' && sub.substage === 'intake_complete' && hasLow && !sub.requiresHumanReview) {
+        dispatch({
+          type: 'UPDATE_SUBMISSION',
+          payload: { ...sub, requiresHumanReview: true, reviewReason: reason }
+        });
+        toast.warning(`Human review required for ${sub.insured.name.value}`, {
+          description: reason,
+        });
+        return;
+      }
+      
+      // Check if we should auto-progress through assignment stage
+      if (sub.stage === 'assignment' && isHighConfidence) {
         autoProgressingRef.current.add(sub.id);
         
         // Auto-assign underwriter if not assigned
+        let updatedSub = sub;
         if (!sub.assignedUnderwriter && state.underwriters.length > 0) {
           const bestUW = state.underwriters
             .filter(uw => uw.workload < uw.maxWorkload)
             .sort((a, b) => b.bindRatio - a.bindRatio)[0];
           
           if (bestUW) {
-            dispatch({
-              type: 'UPDATE_SUBMISSION',
-              payload: {
-                ...sub,
-                assignedUnderwriter: bestUW,
-                history: [
-                  ...sub.history,
-                  {
-                    id: `event-${Date.now()}`,
-                    timestamp: new Date().toISOString(),
-                    type: 'assignment',
-                    actor: 'System (Auto-assign)',
-                    actorRole: 'assignment',
-                    description: `Auto-assigned to ${bestUW.name} (high confidence)`,
-                  },
-                ],
-              }
-            });
+            updatedSub = {
+              ...sub,
+              assignedUnderwriter: bestUW,
+              history: [
+                ...sub.history,
+                {
+                  id: `event-${Date.now()}`,
+                  timestamp: new Date().toISOString(),
+                  type: 'assignment' as const,
+                  actor: 'System (Auto-assign)',
+                  actorRole: 'assignment' as const,
+                  description: `Auto-assigned to ${bestUW.name} (high confidence)`,
+                },
+              ],
+            };
+            dispatch({ type: 'UPDATE_SUBMISSION', payload: updatedSub });
           }
         }
         
-        // Progress through assignment substages to underwriting
-        const assignmentOrder: AssignmentSubstage[] = ['workload_balance', 'specialist_match', 'assignment_complete'];
-        const currentIdx = assignmentOrder.indexOf(sub.substage as AssignmentSubstage);
+        toast.success(`Auto-progressing ${sub.insured.name.value} through Assignment`, {
+          description: `High confidence (${avgConfidence}%) - advancing to Underwriting`,
+          icon: <Zap className="text-primary" />,
+        });
         
-        if (currentIdx >= 0 && currentIdx < assignmentOrder.length - 1) {
-          toast.success(`Auto-progressing ${sub.insured.name.value} through Assignment`, {
-            description: `High confidence (${avgConfidence}%) - advancing to Underwriting`,
-            icon: <Zap className="text-primary" />,
+        // Move to underwriting after a brief delay
+        setTimeout(() => {
+          dispatch({
+            type: 'ADVANCE_STAGE',
+            payload: { submissionId: sub.id, newStage: 'underwriting', substage: 'risk_profiling' }
           });
-          
-          // Move to underwriting after a brief delay
-          setTimeout(() => {
-            dispatch({
-              type: 'ADVANCE_STAGE',
-              payload: { submissionId: sub.id, newStage: 'underwriting', substage: 'risk_profiling' }
-            });
-            autoProgressingRef.current.delete(sub.id);
-          }, 800);
-        } else if (sub.substage === 'assignment_complete') {
-          // Already at assignment_complete, move to underwriting
-          setTimeout(() => {
-            dispatch({
-              type: 'ADVANCE_STAGE',
-              payload: { submissionId: sub.id, newStage: 'underwriting', substage: 'risk_profiling' }
-            });
-            autoProgressingRef.current.delete(sub.id);
-          }, 500);
-        } else {
           autoProgressingRef.current.delete(sub.id);
-        }
+        }, 1000);
       }
     });
-  }, [state.submissions, dispatch, state.underwriters]);
+  }, [state.submissions]);
 
   // Filter submissions based on role visibility
   const roleSubmissions = state.submissions.filter(s => {
@@ -246,17 +234,38 @@ export function WorkbenchPage() {
     const sub = state.submissions.find(s => s.id === submissionId);
     if (!sub) return;
 
-    let newStage = sub.stage;
-    let newSubstage = sub.substage;
+    let newStage: SubmissionStage = sub.stage;
+    let newSubstage: string = sub.substage;
 
     // Intake substage progression
     if (sub.stage === 'intake') {
       const intakeOrder: IntakeSubstage[] = ['document_parsing', 'producer_verification', 'initial_validation', 'intake_complete'];
       const currentIdx = intakeOrder.indexOf(sub.substage as IntakeSubstage);
+      
       if (currentIdx < intakeOrder.length - 1) {
+        // Not at intake_complete yet, advance to next substage
         newSubstage = intakeOrder[currentIdx + 1];
+      } else if (sub.substage === 'intake_complete') {
+        // At intake_complete, move to assignment stage
+        const avgConfidence = calculateStageConfidence(sub);
+        const { hasLow, reason } = hasLowConfidenceFields(sub);
+        
+        if (hasLow) {
+          // Mark for human review instead of advancing
+          toast.warning('Human review required', { description: reason });
+          dispatch({
+            type: 'UPDATE_SUBMISSION',
+            payload: { ...sub, requiresHumanReview: true, reviewReason: reason }
+          });
+          return;
+        }
+        
+        newStage = 'assignment';
+        newSubstage = 'workload_balance';
+        toast.success(`Moving ${sub.insured.name.value} to Assignment`, {
+          description: `Confidence: ${avgConfidence}%`,
+        });
       }
-      // If at intake_complete, let the useEffect handle auto-progression
     }
     // Assignment substage progression
     else if (sub.stage === 'assignment') {
@@ -267,6 +276,7 @@ export function WorkbenchPage() {
       } else {
         newStage = 'underwriting';
         newSubstage = 'risk_profiling';
+        toast.success(`Moving ${sub.insured.name.value} to Underwriting`);
       }
     }
     // Underwriting substage progression
@@ -277,6 +287,7 @@ export function WorkbenchPage() {
         newSubstage = uwOrder[currentIdx + 1];
       } else {
         newStage = 'quoted';
+        toast.success(`Quote generated for ${sub.insured.name.value}`);
       }
     }
 
