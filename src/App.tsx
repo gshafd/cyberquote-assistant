@@ -38,13 +38,13 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-3">
+          <NavLink to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <Shield className="w-8 h-8 text-primary" />
             <div>
-              <h1 className="text-lg font-semibold text-gradient">CyberUW Workbench</h1>
+              <h1 className="text-lg font-semibold text-gradient">FD Ryze® Infinity Aegis™ Underwriting AI</h1>
               <p className="text-xs text-muted-foreground">AI-Enabled Underwriting Platform</p>
             </div>
-          </div>
+          </NavLink>
 
           <nav className="flex items-center gap-2">
             <NavLink to="/">
