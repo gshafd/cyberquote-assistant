@@ -2,8 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, NavLink, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 import { AppProvider, useAppState } from "@/context/AppContext";
+import Index from "@/pages/Index";
 import { InboxPage } from "@/pages/InboxPage";
 import { WorkbenchPage } from "@/pages/WorkbenchPage";
 import { OpsConsolePage } from "@/pages/OpsConsolePage";
@@ -16,7 +17,8 @@ import {
   Shield, 
   Users,
   UserCheck,
-  FileText
+  FileText,
+  LayoutDashboard
 } from "lucide-react";
 import { TeamRole } from "@/types/underwriting";
 
@@ -24,7 +26,6 @@ const queryClient = new QueryClient();
 
 function MainLayout({ children }: { children: React.ReactNode }) {
   const { state, dispatch } = useAppState();
-  const location = useLocation();
 
   const roles: { id: TeamRole; label: string; icon: React.ReactNode }[] = [
     { id: 'intake', label: 'Intake', icon: <FileText size={14} /> },
@@ -48,6 +49,14 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
           <nav className="flex items-center gap-2">
             <NavLink to="/">
+              {({ isActive }) => (
+                <Button variant={isActive ? "secondary" : "ghost"} size="sm" className="gap-2">
+                  <LayoutDashboard size={16} />
+                  Dashboard
+                </Button>
+              )}
+            </NavLink>
+            <NavLink to="/inbox">
               {({ isActive }) => (
                 <Button variant={isActive ? "secondary" : "ghost"} size="sm" className="gap-2">
                   <Mail size={16} />
@@ -98,7 +107,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main Content */}
-      <main className="container px-4 py-6 h-[calc(100vh-5rem)]">
+      <main className="container px-4 py-6">
         {children}
       </main>
     </div>
@@ -110,7 +119,8 @@ function AppContent() {
     <BrowserRouter>
       <MainLayout>
         <Routes>
-          <Route path="/" element={<InboxPage />} />
+          <Route path="/" element={<Index />} />
+          <Route path="/inbox" element={<InboxPage />} />
           <Route path="/workbench" element={<WorkbenchPage />} />
           <Route path="/ops" element={<OpsConsolePage />} />
         </Routes>
