@@ -37,12 +37,12 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container flex items-center justify-between h-16 px-4">
-          <NavLink to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <Shield className="w-8 h-8 text-primary" />
-            <div>
-              <h1 className="text-lg font-semibold text-gradient">FD Ryze® Infinity Aegis™ Underwriting AI</h1>
-              <p className="text-xs text-muted-foreground">AI-Enabled Underwriting Platform</p>
+        <div className="container flex items-center justify-between h-16 px-4 gap-4">
+          <NavLink to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity shrink-0">
+            <Shield className="w-7 h-7 text-primary shrink-0" />
+            <div className="whitespace-nowrap">
+              <h1 className="text-sm font-semibold text-gradient">FD Ryze® Infinity Aegis™ Underwriting AI</h1>
+              <p className="text-[10px] text-muted-foreground">AI-Enabled Underwriting Platform</p>
             </div>
           </NavLink>
 
