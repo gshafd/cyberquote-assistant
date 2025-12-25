@@ -129,6 +129,7 @@ function AppContent() {
   );
 }
 
+// Main App component with providers
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
