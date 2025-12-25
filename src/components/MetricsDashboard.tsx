@@ -105,7 +105,8 @@ export function MetricsDashboard() {
             {(Object.keys(stageConfig) as SubmissionStage[]).map((stage) => {
               const config = stageConfig[stage];
               const Icon = config.icon;
-              const count = metrics.submissionsByStage[stage] || 0;
+              // Calculate from actual submissions
+              const count = submissions.filter(s => s.stage === stage).length;
               
               return (
                 <div 
@@ -121,34 +122,6 @@ export function MetricsDashboard() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Performance Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground">Bind Ratio</p>
-            <p className="text-xl font-bold text-emerald-500">{(metrics.bindRatio * 100).toFixed(0)}%</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground">Decline Ratio</p>
-            <p className="text-xl font-bold text-destructive">{(metrics.declineRatio * 100).toFixed(0)}%</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground">Daily Runs</p>
-            <p className="text-xl font-bold text-foreground">{metrics.dailyRuns}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground">Monthly Runs</p>
-            <p className="text-xl font-bold text-foreground">{metrics.monthlyRuns}</p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

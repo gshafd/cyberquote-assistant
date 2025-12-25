@@ -1,8 +1,17 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppState } from '@/context/AppContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -11,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Eye, AlertTriangle, CheckCircle2, Edit, MoreHorizontal } from 'lucide-react';
+import { Eye, AlertTriangle, Edit, MoreHorizontal, Search, Filter, Sparkles } from 'lucide-react';
 import { SubmissionStage } from '@/types/underwriting';
 import { format } from 'date-fns';
 import {
@@ -39,34 +48,115 @@ const stageLabels: Record<SubmissionStage, string> = {
   binding: 'Binding & Issuing',
 };
 
+// AI Summary generator based on submission data
+const generateAISummary = (submission: any): string => {
+  const { insured, controls, riskProfile, stage } = submission;
+  const industry = insured.industry.value;
+  const revenue = insured.annualRevenue.value;
+  const revenueInM = (revenue / 1000000).toFixed(0);
+  
+  if (stage === 'submission') {
+    return `New ${industry} submission ($${revenueInM}M revenue). Pending document parsing and validation.`;
+  }
+  
+  if (stage === 'data_collection') {
+    const issues = [];
+    if (controls.hasEDR.confidence < 70) issues.push('EDR status unclear');
+    if (controls.hasMFA.confidence < 70) issues.push('MFA verification needed');
+    return issues.length > 0 
+      ? `${industry} company, $${revenueInM}M revenue. ${issues.join(', ')}.`
+      : `${industry} company, $${revenueInM}M revenue. Data collection in progress.`;
+  }
+  
+  if (riskProfile) {
+    const riskScore = riskProfile.overallScore.value;
+    const riskLevel = riskScore < 40 ? 'Low' : riskScore < 60 ? 'Moderate' : 'Elevated';
+    return `${industry}, $${revenueInM}M revenue. ${riskLevel} risk (${riskScore}/100). ${controls.hasSOC2.value ? 'SOC2 certified.' : ''}`;
+  }
+  
+  return `${industry} company with $${revenueInM}M annual revenue.`;
+};
+
 export function SubmissionsList() {
   const { state, dispatch } = useAppState();
   const navigate = useNavigate();
   const { submissions } = state;
+  
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [stageFilter, setStageFilter] = useState<string>('all');
+  const [producerFilter, setProducerFilter] = useState<string>('all');
 
   const handleViewSubmission = (submissionId: string) => {
     dispatch({ type: 'SELECT_SUBMISSION', payload: submissionId });
     navigate('/workbench');
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(value);
-  };
+  // Get unique producers for filter
+  const uniqueProducers = Array.from(new Set(submissions.map(s => s.producer.agency)));
+
+  // Apply filters
+  const filteredSubmissions = submissions.filter(submission => {
+    const matchesSearch = searchQuery === '' || 
+      submission.insured.name.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      submission.producer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      submission.producer.agency.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStage = stageFilter === 'all' || submission.stage === stageFilter;
+    const matchesProducer = producerFilter === 'all' || submission.producer.agency === producerFilter;
+    
+    return matchesSearch && matchesStage && matchesProducer;
+  });
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium flex items-center gap-2">
-          All Submissions
-          <Badge variant="secondary" className="text-xs">
-            {submissions.length} total
-          </Badge>
-        </CardTitle>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            All Submissions
+            <Badge variant="secondary" className="text-xs">
+              {filteredSubmissions.length} of {submissions.length}
+            </Badge>
+          </CardTitle>
+          
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search insured or producer..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-9 w-[200px]"
+              />
+            </div>
+            
+            <Select value={stageFilter} onValueChange={setStageFilter}>
+              <SelectTrigger className="h-9 w-[150px]">
+                <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Stage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stages</SelectItem>
+                {Object.entries(stageLabels).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={producerFilter} onValueChange={setProducerFilter}>
+              <SelectTrigger className="h-9 w-[180px]">
+                <SelectValue placeholder="Producer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Producers</SelectItem>
+                {uniqueProducers.map((producer) => (
+                  <SelectItem key={producer} value={producer}>{producer}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
@@ -80,13 +170,12 @@ export function SubmissionsList() {
                 <TableHead className="text-xs font-medium">Effective Period</TableHead>
                 <TableHead className="text-xs font-medium">Stage</TableHead>
                 <TableHead className="text-xs font-medium">Underwriter</TableHead>
-                <TableHead className="text-xs font-medium">Intake User</TableHead>
-                <TableHead className="text-xs font-medium">Confidence</TableHead>
+                <TableHead className="text-xs font-medium min-w-[250px]">AI Summary</TableHead>
                 <TableHead className="text-xs font-medium text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {submissions.map((submission) => (
+              {filteredSubmissions.map((submission) => (
                 <TableRow 
                   key={submission.id} 
                   className="hover:bg-muted/30 cursor-pointer"
@@ -144,31 +233,12 @@ export function SubmissionsList() {
                       <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-sm">
-                    {submission.stage === 'submission' || submission.stage === 'data_collection' ? (
-                      <span className="text-foreground">System</span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1.5">
-                      {submission.confidence >= 75 ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      ) : submission.confidence >= 50 ? (
-                        <AlertTriangle className="w-4 h-4 text-amber-500" />
-                      ) : (
-                        <AlertTriangle className="w-4 h-4 text-destructive" />
-                      )}
-                      <span className={`text-sm font-medium ${
-                        submission.confidence >= 75 
-                          ? 'text-emerald-500' 
-                          : submission.confidence >= 50 
-                            ? 'text-amber-500' 
-                            : 'text-destructive'
-                      }`}>
-                        {submission.confidence}%
-                      </span>
+                    <div className="flex items-start gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {generateAISummary(submission)}
+                      </p>
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
@@ -209,10 +279,10 @@ export function SubmissionsList() {
                   </TableCell>
                 </TableRow>
               ))}
-              {submissions.length === 0 && (
+              {filteredSubmissions.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                    No submissions found
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    {submissions.length === 0 ? 'No submissions found' : 'No submissions match your filters'}
                   </TableCell>
                 </TableRow>
               )}
