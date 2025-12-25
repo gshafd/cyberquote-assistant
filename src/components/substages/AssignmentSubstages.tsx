@@ -11,6 +11,7 @@ import {
   Briefcase,
   Clock,
   Target,
+  Zap,
 } from 'lucide-react';
 
 interface AssignmentSubstagesProps {
@@ -31,6 +32,9 @@ export function AssignmentSubstages({
   onAdvanceSubstage,
 }: AssignmentSubstagesProps) {
   const currentIdx = substageOrder.indexOf(currentSubstage);
+  
+  // Check if high confidence for auto-assignment
+  const isHighConfidence = submission.confidence >= 85;
 
   // Find matching specialists based on industry
   const matchingUWs = underwriters.filter(
@@ -162,11 +166,17 @@ export function AssignmentSubstages({
               <Target size={18} className="text-primary" />
               Specialist Match
               {currentIdx > 1 && <Badge variant="outline" className="text-success border-success">Complete</Badge>}
+              {isHighConfidence && currentSubstage === 'specialist_match' && !submission.assignedUnderwriter && (
+                <Badge className="bg-primary/20 text-primary animate-pulse">Auto-Assigning...</Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
               Recommended underwriters based on industry expertise match for <strong>{submission.insured.industry.value}</strong>
+              {isHighConfidence && !submission.assignedUnderwriter && (
+                <span className="ml-2 text-primary font-medium">(High confidence - will auto-assign best match)</span>
+              )}
             </p>
             <div className="space-y-3">
               {matchingUWs.map((uw, idx) => (
@@ -175,6 +185,8 @@ export function AssignmentSubstages({
                   className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors ${
                     submission.assignedUnderwriter?.id === uw.id 
                       ? 'bg-primary/10 border-primary' 
+                      : idx === 0 && isHighConfidence && !submission.assignedUnderwriter
+                      ? 'bg-primary/5 border-primary/50 animate-pulse'
                       : 'bg-muted/30 border-transparent hover:border-primary/50 cursor-pointer'
                   }`}
                   onClick={() => !submission.assignedUnderwriter && onAssignUnderwriter(uw)}
@@ -202,6 +214,7 @@ export function AssignmentSubstages({
               <p className="text-sm">
                 Matched underwriters with expertise in {submission.insured.industry.value.toLowerCase()} sector. 
                 Scoring based on specialty alignment, current workload, and historical performance.
+                {isHighConfidence && ' High confidence submissions are auto-assigned to the best match.'}
               </p>
               <p className="text-xs text-primary mt-2 font-mono">Source: Assignment_Rules.json, Rule AM-003</p>
             </div>
@@ -212,13 +225,20 @@ export function AssignmentSubstages({
       {/* Advance Button */}
       {currentSubstage !== 'assignment_complete' && (
         <div className="flex justify-end">
-          <Button 
-            onClick={onAdvanceSubstage}
-            disabled={currentSubstage === 'specialist_match' && !submission.assignedUnderwriter}
-          >
-            {currentSubstage === 'specialist_match' ? 'Complete Assignment' : 'Advance to Next Step'}
-            <ArrowRight size={16} className="ml-2" />
-          </Button>
+          {isHighConfidence && currentSubstage === 'specialist_match' && !submission.assignedUnderwriter ? (
+            <div className="flex items-center gap-2 text-primary animate-pulse">
+              <Zap size={16} />
+              <span className="text-sm font-medium">Auto-assigning (high confidence)...</span>
+            </div>
+          ) : (
+            <Button 
+              onClick={onAdvanceSubstage}
+              disabled={currentSubstage === 'specialist_match' && !submission.assignedUnderwriter}
+            >
+              {currentSubstage === 'specialist_match' ? 'Complete Assignment' : 'Advance to Next Step'}
+              <ArrowRight size={16} className="ml-2" />
+            </Button>
+          )}
         </div>
       )}
 
