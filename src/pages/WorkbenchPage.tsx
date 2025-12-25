@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Zap,
+  Clock,
 } from 'lucide-react';
 import { 
   Submission, 
@@ -293,31 +294,22 @@ export function WorkbenchPage() {
     });
   }, [state.submissions]);
 
-  // Filter submissions based on role visibility
-  const roleSubmissions = state.submissions.filter(s => {
-    if (state.currentRole === 'intake') {
-      return s.stage === 'data_collection' || s.stage === 'submission';
-    }
-    if (state.currentRole === 'assignment') {
-      return s.stage === 'risk_assessment' || s.stage === 'pricing' || s.stage === 'quotation' || s.stage === 'binding';
-    }
-    if (state.currentRole === 'underwriting') {
-      return ['pricing', 'quotation', 'binding'].includes(s.stage);
-    }
-    return false;
-  });
+  // All roles can see all submissions - they just have different editing capabilities
+  const roleSubmissions = state.submissions;
 
   const selectedSubmission = state.submissions.find(s => s.id === state.selectedSubmissionId);
 
-  const canViewDetails = (sub: Submission): boolean => {
+  // Can view workflow details (interact with substages) - limited by role
+  const canInteractWithWorkflow = (sub: Submission): boolean => {
     if (state.currentRole === 'intake') return sub.stage === 'data_collection' || sub.stage === 'submission';
-    if (state.currentRole === 'assignment') {
-      return sub.stage === 'risk_assessment' || sub.stage === 'pricing' || sub.stage === 'quotation' || sub.stage === 'binding';
-    }
-    if (state.currentRole === 'underwriting') {
-      return ['pricing', 'quotation', 'binding'].includes(sub.stage);
-    }
+    if (state.currentRole === 'assignment') return sub.stage === 'risk_assessment';
+    if (state.currentRole === 'underwriting') return ['pricing', 'quotation', 'binding'].includes(sub.stage);
     return false;
+  };
+
+  // Can view the details panel (always true - all roles can see where cases are)
+  const canViewDetails = (_sub: Submission): boolean => {
+    return true; // All roles can view submission details
   };
 
   const canEdit = (sub: Submission): boolean => {
@@ -491,11 +483,23 @@ export function WorkbenchPage() {
                       Review required
                     </div>
                   )}
-                  {/* Show completion status for assignment role viewing past stages */}
-                  {state.currentRole === 'assignment' && sub.stage !== 'risk_assessment' && (
+                  {/* Show status indicators based on role and case stage */}
+                  {state.currentRole === 'intake' && !['data_collection', 'submission'].includes(sub.stage) && (
                     <div className="mt-2 flex items-center gap-1 text-xs text-success">
                       <CheckCircle size={12} />
-                      {sub.stage === 'pricing' || sub.stage === 'quotation' || sub.stage === 'binding' ? 'In Progress' : 'Completed'}
+                      Intake Complete • In {sub.stage.replace(/_/g, ' ')}
+                    </div>
+                  )}
+                  {state.currentRole === 'assignment' && ['data_collection', 'submission'].includes(sub.stage) && (
+                    <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock size={12} />
+                      Pending (in intake)
+                    </div>
+                  )}
+                  {state.currentRole === 'assignment' && !['data_collection', 'submission', 'risk_assessment'].includes(sub.stage) && (
+                    <div className="mt-2 flex items-center gap-1 text-xs text-success">
+                      <CheckCircle size={12} />
+                      Assigned • In {sub.stage.replace(/_/g, ' ')}
                     </div>
                   )}
                 </div>
@@ -545,6 +549,22 @@ export function WorkbenchPage() {
             />
           )}
 
+          {/* Intake user viewing completed cases - read-only status */}
+          {state.currentRole === 'intake' && !['data_collection', 'submission'].includes(selectedSubmission.stage) && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center text-muted-foreground">
+                  <CheckCircle size={48} className="mx-auto mb-4 text-success opacity-50" />
+                  <p className="font-medium">Intake Completed</p>
+                  <p className="text-sm mt-1">
+                    This submission has completed intake and is currently in the <strong>{selectedSubmission.stage.replace(/_/g, ' ')}</strong> stage
+                    {selectedSubmission.assignedUnderwriter && ` • Assigned to ${selectedSubmission.assignedUnderwriter.name}`}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {selectedSubmission.stage === 'risk_assessment' && state.currentRole === 'assignment' && (
             <AssignmentSubstages
               submission={selectedSubmission}
@@ -566,16 +586,35 @@ export function WorkbenchPage() {
             />
           )}
 
-          {/* Read-only view for assignment team viewing past stages */}
+          {/* Assignment user viewing cases not in risk_assessment - read-only status */}
           {state.currentRole === 'assignment' && selectedSubmission.stage !== 'risk_assessment' && (
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center text-muted-foreground">
                   <CheckCircle size={48} className="mx-auto mb-4 text-success opacity-50" />
-                  <p className="font-medium">Assessment Completed</p>
+                  <p className="font-medium">
+                    {['data_collection', 'submission'].includes(selectedSubmission.stage) ? 'Pending Assignment' : 'Assignment Completed'}
+                  </p>
                   <p className="text-sm mt-1">
-                    This submission has been assigned to {selectedSubmission.assignedUnderwriter?.name || 'an underwriter'} 
-                    and is currently in the {selectedSubmission.stage.replace(/_/g, ' ')} stage.
+                    {['data_collection', 'submission'].includes(selectedSubmission.stage) 
+                      ? `This submission is in intake (${selectedSubmission.stage.replace(/_/g, ' ')}) and will arrive for assignment once intake is complete.`
+                      : `Assigned to ${selectedSubmission.assignedUnderwriter?.name || 'an underwriter'} • Currently in ${selectedSubmission.stage.replace(/_/g, ' ')} stage.`
+                    }
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Underwriting user viewing cases not in their stages */}
+          {state.currentRole === 'underwriting' && !['pricing', 'quotation', 'binding'].includes(selectedSubmission.stage) && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center text-muted-foreground">
+                  <Clock size={48} className="mx-auto mb-4 opacity-50" />
+                  <p className="font-medium">Pending Underwriting</p>
+                  <p className="text-sm mt-1">
+                    This submission is currently in {selectedSubmission.stage.replace(/_/g, ' ')} and will arrive for underwriting once earlier stages are complete.
                   </p>
                 </div>
               </CardContent>
