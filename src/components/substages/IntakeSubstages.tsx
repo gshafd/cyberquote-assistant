@@ -10,6 +10,7 @@ import {
   CheckCircle,
   AlertTriangle,
   ArrowRight,
+  Zap,
 } from 'lucide-react';
 
 interface IntakeSubstagesProps {
@@ -21,8 +22,34 @@ interface IntakeSubstagesProps {
 
 const substageOrder: IntakeSubstage[] = ['document_parsing', 'producer_verification', 'initial_validation', 'intake_complete'];
 
+// Helper to check if substage has any low confidence fields
+const hasLowConfidenceInSubstage = (submission: Submission, substage: IntakeSubstage): boolean => {
+  const threshold = 70;
+  
+  if (substage === 'document_parsing') {
+    return [
+      submission.insured.name.confidence,
+      submission.insured.industry.confidence,
+      submission.insured.annualRevenue.confidence,
+      submission.insured.employeeCount.confidence,
+      submission.insured.website.confidence,
+    ].some(c => c < threshold);
+  }
+  if (substage === 'initial_validation') {
+    return [
+      submission.controls.hasMFA.confidence,
+      submission.controls.hasEDR.confidence,
+      submission.controls.hasSOC2.confidence,
+      submission.controls.hasBackups.confidence,
+    ].some(c => c < threshold);
+  }
+  return false;
+};
+
 export function IntakeSubstages({ submission, currentSubstage, onFieldEdit, onAdvanceSubstage }: IntakeSubstagesProps) {
   const currentIdx = substageOrder.indexOf(currentSubstage);
+  const hasLowConfidence = hasLowConfidenceInSubstage(submission, currentSubstage);
+  const isAutoProgressing = !hasLowConfidence && currentSubstage !== 'intake_complete';
 
   return (
     <div className="space-y-4">
@@ -199,9 +226,14 @@ export function IntakeSubstages({ submission, currentSubstage, onFieldEdit, onAd
         </Card>
       )}
 
-      {/* Advance Button - show for all substages including intake_complete */}
+      {/* Advance Button - only show when low confidence requires human review */}
       <div className="flex justify-end">
-        {currentSubstage !== 'intake_complete' ? (
+        {isAutoProgressing ? (
+          <div className="flex items-center gap-2 text-primary animate-pulse">
+            <Zap size={16} />
+            <span className="text-sm font-medium">Auto-advancing (high confidence)...</span>
+          </div>
+        ) : currentSubstage !== 'intake_complete' ? (
           <Button onClick={onAdvanceSubstage}>
             {currentSubstage === 'initial_validation' ? 'Complete Intake' : 'Advance to Next Step'}
             <ArrowRight size={16} className="ml-2" />
@@ -212,13 +244,17 @@ export function IntakeSubstages({ submission, currentSubstage, onFieldEdit, onAd
               <CheckCircle size={20} className="text-success" />
               <div>
                 <p className="font-medium text-success text-sm">Intake Complete</p>
-                <p className="text-xs text-muted-foreground">Ready for Assignment</p>
+                <p className="text-xs text-muted-foreground">
+                  {submission.requiresHumanReview ? 'Waiting for review' : 'Auto-advancing to Assignment'}
+                </p>
               </div>
             </div>
-            <Button onClick={onAdvanceSubstage} className="bg-gradient-primary">
-              Send to Assignment
-              <ArrowRight size={16} className="ml-2" />
-            </Button>
+            {submission.requiresHumanReview && (
+              <Button onClick={onAdvanceSubstage} className="bg-gradient-primary">
+                Send to Assignment
+                <ArrowRight size={16} className="ml-2" />
+              </Button>
+            )}
           </div>
         )}
       </div>
