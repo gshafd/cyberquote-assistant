@@ -5,6 +5,7 @@ export type TeamRole = 'intake' | 'assignment' | 'underwriting' | 'ops';
 export type SubmissionStage = 
   | 'submission' 
   | 'data_collection' 
+  | 'assignment'
   | 'risk_assessment' 
   | 'pricing' 
   | 'quotation' 

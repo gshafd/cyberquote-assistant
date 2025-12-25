@@ -33,6 +33,7 @@ import {
 const stageColors: Record<SubmissionStage, string> = {
   submission: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
   data_collection: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  assignment: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
   risk_assessment: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
   pricing: 'bg-primary/10 text-primary border-primary/20',
   quotation: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
@@ -42,6 +43,7 @@ const stageColors: Record<SubmissionStage, string> = {
 const stageLabels: Record<SubmissionStage, string> = {
   submission: 'Submission',
   data_collection: 'Data Collection',
+  assignment: 'Assignment',
   risk_assessment: 'Risk Assessment',
   pricing: 'Pricing & Rating',
   quotation: 'Quotation',
