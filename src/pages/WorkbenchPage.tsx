@@ -78,7 +78,46 @@ export function WorkbenchPage() {
     return { hasLow: false, reason: '' };
   };
 
-  // Auto-progression effect - watches for stage changes and auto-advances high confidence submissions
+  // Get all confidence values for a substage
+  const getSubstageConfidences = (sub: Submission, substage: string): number[] => {
+    if (substage === 'document_parsing') {
+      return [
+        sub.insured.name.confidence,
+        sub.insured.industry.confidence,
+        sub.insured.annualRevenue.confidence,
+        sub.insured.employeeCount.confidence,
+        sub.insured.website.confidence,
+        sub.insured.sicCode?.confidence || 90,
+      ];
+    }
+    if (substage === 'producer_verification') {
+      return [95]; // Producer verification is typically high confidence
+    }
+    if (substage === 'initial_validation') {
+      return [
+        sub.controls.hasMFA.confidence,
+        sub.controls.hasEDR.confidence,
+        sub.controls.hasSOC2.confidence,
+        sub.controls.hasBackups.confidence,
+      ];
+    }
+    if (substage === 'risk_profiling' && sub.riskProfile) {
+      return [
+        sub.riskProfile.overallScore.confidence,
+        sub.riskProfile.controlsScore.confidence,
+        sub.riskProfile.threatExposure.confidence,
+      ];
+    }
+    return [sub.confidence];
+  };
+
+  const isSubstageHighConfidence = (sub: Submission, substage: string): boolean => {
+    const confidences = getSubstageConfidences(sub, substage);
+    const threshold = 70;
+    return confidences.every(c => c >= threshold);
+  };
+
+  // Auto-progression effect - watches for stage/substage changes and auto-advances high confidence submissions
   useEffect(() => {
     state.submissions.forEach(sub => {
       // Skip if already processing this submission
@@ -86,27 +125,54 @@ export function WorkbenchPage() {
       
       const avgConfidence = calculateStageConfidence(sub);
       const { hasLow, reason } = hasLowConfidenceFields(sub);
+      const isCurrentSubstageHighConf = isSubstageHighConfidence(sub, sub.substage);
       
       // High confidence threshold for auto-progression
-      const confidenceThreshold = 75;
+      const confidenceThreshold = 70;
       const isHighConfidence = !hasLow && avgConfidence >= confidenceThreshold;
       
-      // Check if we should auto-progress from data_collection to risk_assessment
-      if (sub.stage === 'data_collection' && sub.substage === 'intake_complete' && isHighConfidence) {
-        autoProgressingRef.current.add(sub.id);
-        toast.success(`Auto-advancing ${sub.insured.name.value}`, {
-          description: `High confidence (${avgConfidence}%) - moving to Risk Assessment`,
-          icon: <Zap className="text-primary" />,
-        });
+      // Auto-advance through data_collection substages
+      if (sub.stage === 'data_collection' && isCurrentSubstageHighConf) {
+        const intakeOrder: IntakeSubstage[] = ['document_parsing', 'producer_verification', 'initial_validation', 'intake_complete'];
+        const currentIdx = intakeOrder.indexOf(sub.substage as IntakeSubstage);
         
-        setTimeout(() => {
-          dispatch({
-            type: 'ADVANCE_STAGE',
-            payload: { submissionId: sub.id, newStage: 'risk_assessment', substage: 'risk_profiling' }
+        // Auto-advance within substages
+        if (currentIdx >= 0 && currentIdx < intakeOrder.length - 1) {
+          autoProgressingRef.current.add(sub.id);
+          const nextSubstage = intakeOrder[currentIdx + 1];
+          
+          toast.success(`Auto-advancing ${sub.insured.name.value}`, {
+            description: `High confidence - moving to ${nextSubstage.replace(/_/g, ' ')}`,
+            icon: <Zap className="text-primary" />,
           });
-          autoProgressingRef.current.delete(sub.id);
-        }, 800);
-        return;
+          
+          setTimeout(() => {
+            dispatch({
+              type: 'ADVANCE_STAGE',
+              payload: { submissionId: sub.id, newStage: 'data_collection', substage: nextSubstage }
+            });
+            autoProgressingRef.current.delete(sub.id);
+          }, 600);
+          return;
+        }
+        
+        // At intake_complete, move to risk_assessment if all high confidence
+        if (sub.substage === 'intake_complete' && isHighConfidence) {
+          autoProgressingRef.current.add(sub.id);
+          toast.success(`Auto-advancing ${sub.insured.name.value}`, {
+            description: `High confidence (${avgConfidence}%) - moving to Risk Assessment`,
+            icon: <Zap className="text-primary" />,
+          });
+          
+          setTimeout(() => {
+            dispatch({
+              type: 'ADVANCE_STAGE',
+              payload: { submissionId: sub.id, newStage: 'risk_assessment', substage: 'risk_profiling' }
+            });
+            autoProgressingRef.current.delete(sub.id);
+          }, 800);
+          return;
+        }
       }
       
       // Mark for review if low confidence and at intake_complete
@@ -121,50 +187,108 @@ export function WorkbenchPage() {
         return;
       }
       
-      // Check if we should auto-progress through risk_assessment stage
-      if (sub.stage === 'risk_assessment' && isHighConfidence) {
-        autoProgressingRef.current.add(sub.id);
+      // Auto-progress through risk_assessment substages
+      if (sub.stage === 'risk_assessment') {
+        const assessmentOrder = ['risk_profiling', 'rules_check', 'coverage_determination'];
+        const currentIdx = assessmentOrder.indexOf(sub.substage);
         
-        // Auto-assign underwriter if not assigned
-        let updatedSub = sub;
-        if (!sub.assignedUnderwriter && state.underwriters.length > 0) {
-          const bestUW = state.underwriters
-            .filter(uw => uw.workload < uw.maxWorkload)
-            .sort((a, b) => b.bindRatio - a.bindRatio)[0];
+        if (isHighConfidence) {
+          autoProgressingRef.current.add(sub.id);
           
-          if (bestUW) {
-            updatedSub = {
-              ...sub,
-              assignedUnderwriter: bestUW,
-              history: [
-                ...sub.history,
-                {
-                  id: `event-${Date.now()}`,
-                  timestamp: new Date().toISOString(),
-                  type: 'assignment' as const,
-                  actor: 'System (Auto-assign)',
-                  actorRole: 'assignment' as const,
-                  description: `Auto-assigned to ${bestUW.name} (high confidence)`,
-                },
-              ],
-            };
-            dispatch({ type: 'UPDATE_SUBMISSION', payload: updatedSub });
+          // Auto-assign underwriter if not assigned
+          let updatedSub = sub;
+          if (!sub.assignedUnderwriter && state.underwriters.length > 0) {
+            const bestUW = state.underwriters
+              .filter(uw => uw.workload < uw.maxWorkload)
+              .sort((a, b) => b.bindRatio - a.bindRatio)[0];
+            
+            if (bestUW) {
+              updatedSub = {
+                ...sub,
+                assignedUnderwriter: bestUW,
+                history: [
+                  ...sub.history,
+                  {
+                    id: `event-${Date.now()}`,
+                    timestamp: new Date().toISOString(),
+                    type: 'assignment' as const,
+                    actor: 'System (Auto-assign)',
+                    actorRole: 'assignment' as const,
+                    description: `Auto-assigned to ${bestUW.name} (high confidence)`,
+                  },
+                ],
+              };
+              dispatch({ type: 'UPDATE_SUBMISSION', payload: updatedSub });
+            }
+          }
+          
+          // Move to next substage or next stage
+          if (currentIdx < assessmentOrder.length - 1) {
+            const nextSubstage = assessmentOrder[currentIdx + 1];
+            toast.success(`Auto-advancing ${sub.insured.name.value}`, {
+              description: `High confidence - moving to ${nextSubstage.replace(/_/g, ' ')}`,
+              icon: <Zap className="text-primary" />,
+            });
+            
+            setTimeout(() => {
+              dispatch({
+                type: 'ADVANCE_STAGE',
+                payload: { submissionId: sub.id, newStage: 'risk_assessment', substage: nextSubstage }
+              });
+              autoProgressingRef.current.delete(sub.id);
+            }, 600);
+          } else {
+            toast.success(`Auto-progressing ${sub.insured.name.value}`, {
+              description: `High confidence (${avgConfidence}%) - advancing to Pricing`,
+              icon: <Zap className="text-primary" />,
+            });
+            
+            setTimeout(() => {
+              dispatch({
+                type: 'ADVANCE_STAGE',
+                payload: { submissionId: sub.id, newStage: 'pricing', substage: 'pricing' }
+              });
+              autoProgressingRef.current.delete(sub.id);
+            }, 800);
           }
         }
+      }
+      
+      // Auto-progress through pricing stage
+      if (sub.stage === 'pricing' && isHighConfidence) {
+        autoProgressingRef.current.add(sub.id);
         
-        toast.success(`Auto-progressing ${sub.insured.name.value} through Risk Assessment`, {
-          description: `High confidence (${avgConfidence}%) - advancing to Pricing`,
-          icon: <Zap className="text-primary" />,
-        });
+        const pricingOrder = ['pricing', 'quote_draft'];
+        const currentIdx = pricingOrder.indexOf(sub.substage);
         
-        // Move to pricing after a brief delay
-        setTimeout(() => {
-          dispatch({
-            type: 'ADVANCE_STAGE',
-            payload: { submissionId: sub.id, newStage: 'pricing', substage: 'pricing' }
+        if (currentIdx < pricingOrder.length - 1) {
+          const nextSubstage = pricingOrder[currentIdx + 1];
+          toast.success(`Auto-advancing ${sub.insured.name.value}`, {
+            description: `High confidence - moving to ${nextSubstage.replace(/_/g, ' ')}`,
+            icon: <Zap className="text-primary" />,
           });
-          autoProgressingRef.current.delete(sub.id);
-        }, 1000);
+          
+          setTimeout(() => {
+            dispatch({
+              type: 'ADVANCE_STAGE',
+              payload: { submissionId: sub.id, newStage: 'pricing', substage: nextSubstage }
+            });
+            autoProgressingRef.current.delete(sub.id);
+          }, 600);
+        } else {
+          toast.success(`Auto-advancing ${sub.insured.name.value}`, {
+            description: `High confidence - Quote generated`,
+            icon: <Zap className="text-primary" />,
+          });
+          
+          setTimeout(() => {
+            dispatch({
+              type: 'ADVANCE_STAGE',
+              payload: { submissionId: sub.id, newStage: 'quotation', substage: 'quote_review' }
+            });
+            autoProgressingRef.current.delete(sub.id);
+          }, 800);
+        }
       }
     });
   }, [state.submissions]);
