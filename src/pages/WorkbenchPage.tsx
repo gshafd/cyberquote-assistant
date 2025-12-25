@@ -7,7 +7,9 @@ import { StageProgress } from '@/components/StageProgress';
 import { ConfidenceBadge } from '@/components/ConfidenceBadge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { IntakeSubstages } from '@/components/substages/IntakeSubstages';
+import { IntakeSummaryReadOnly } from '@/components/substages/IntakeSummaryReadOnly';
 import { AssignmentSubstages } from '@/components/substages/AssignmentSubstages';
+import { AssignmentSummaryReadOnly } from '@/components/substages/AssignmentSummaryReadOnly';
 import { UnderwritingSubstages } from '@/components/substages/UnderwritingSubstages';
 import { toast } from 'sonner';
 import { 
@@ -176,12 +178,55 @@ export function WorkbenchPage() {
         }
       }
 
-      // Auto-progress through assignment substages
+      // Auto-progress through assignment substages with auto-assignment
       if (sub.stage === 'assignment') {
         const assignmentOrder: AssignmentSubstage[] = ['workload_balance', 'specialist_match', 'assignment_complete'];
         const currentIdx = assignmentOrder.indexOf(sub.substage as AssignmentSubstage);
 
+        // Auto-assign underwriter at specialist_match when confidence is high
+        if (sub.substage === 'specialist_match' && !sub.assignedUnderwriter && avgConfidence >= 85) {
+          // Find best matching underwriter
+          const matchingUWs = state.underwriters.filter(
+            uw => uw.specialty.some(s => 
+              sub.insured.industry.value.toLowerCase().includes(s.toLowerCase()) ||
+              s.toLowerCase().includes('technology') ||
+              s.toLowerCase().includes('healthcare')
+            )
+          );
+          
+          if (matchingUWs.length > 0) {
+            const bestMatch = matchingUWs[0];
+            autoProgressingRef.current.add(sub.id);
+            
+            toast.success(`Auto-assigning ${sub.insured.name.value}`, {
+              description: `High confidence (${avgConfidence}%) - Assigned to ${bestMatch.name}`,
+              icon: <Zap className="text-primary" />,
+            });
+            
+            setTimeout(() => {
+              dispatch({
+                type: 'UPDATE_SUBMISSION',
+                payload: { ...sub, assignedUnderwriter: bestMatch }
+              });
+              // Auto-advance to assignment_complete
+              setTimeout(() => {
+                dispatch({
+                  type: 'ADVANCE_STAGE',
+                  payload: { submissionId: sub.id, newStage: 'assignment', substage: 'assignment_complete' }
+                });
+                autoProgressingRef.current.delete(sub.id);
+              }, 400);
+            }, 600);
+            return;
+          }
+        }
+
         if (isCurrentSubstageHighConf && currentIdx >= 0 && currentIdx < assignmentOrder.length - 1) {
+          // Skip specialist_match auto-advance if no underwriter assigned (requires selection)
+          if (sub.substage === 'specialist_match' && !sub.assignedUnderwriter) {
+            return;
+          }
+          
           autoProgressingRef.current.add(sub.id);
           const nextSubstage = assignmentOrder[currentIdx + 1];
 
@@ -605,20 +650,9 @@ export function WorkbenchPage() {
             />
           )}
 
-          {/* Intake user viewing completed cases - read-only status */}
+          {/* Intake user viewing completed cases - read-only full results */}
           {state.currentRole === 'intake' && !['data_collection', 'submission'].includes(selectedSubmission.stage) && (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center text-muted-foreground">
-                  <CheckCircle size={48} className="mx-auto mb-4 text-success opacity-50" />
-                  <p className="font-medium">Intake Completed</p>
-                  <p className="text-sm mt-1">
-                    This submission has completed intake and is currently in the <strong>{selectedSubmission.stage.replace(/_/g, ' ')}</strong> stage
-                    {selectedSubmission.assignedUnderwriter && ` • Assigned to ${selectedSubmission.assignedUnderwriter.name}`}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <IntakeSummaryReadOnly submission={selectedSubmission} />
           )}
 
           {selectedSubmission.stage === 'assignment' && state.currentRole === 'assignment' && (
@@ -644,22 +678,21 @@ export function WorkbenchPage() {
 
           {/* Assignment user viewing cases not in assignment stage - read-only status */}
           {state.currentRole === 'assignment' && selectedSubmission.stage !== 'assignment' && (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center text-muted-foreground">
-                  <CheckCircle size={48} className="mx-auto mb-4 text-success opacity-50" />
-                  <p className="font-medium">
-                    {['data_collection', 'submission'].includes(selectedSubmission.stage) ? 'Pending Assignment' : 'Assignment Completed'}
-                  </p>
-                  <p className="text-sm mt-1">
-                    {['data_collection', 'submission'].includes(selectedSubmission.stage) 
-                      ? `This submission is in intake (${selectedSubmission.stage.replace(/_/g, ' ')}) and will arrive for assignment once intake is complete.`
-                      : `Assigned to ${selectedSubmission.assignedUnderwriter?.name || 'an underwriter'} • Currently in ${selectedSubmission.stage.replace(/_/g, ' ')} stage.`
-                    }
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            ['data_collection', 'submission'].includes(selectedSubmission.stage) ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center text-muted-foreground">
+                    <Clock size={48} className="mx-auto mb-4 opacity-50" />
+                    <p className="font-medium">Pending Assignment</p>
+                    <p className="text-sm mt-1">
+                      This submission is in intake ({selectedSubmission.stage.replace(/_/g, ' ')}) and will arrive for assignment once intake is complete.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <AssignmentSummaryReadOnly submission={selectedSubmission} underwriters={state.underwriters} />
+            )
           )}
 
           {/* Underwriting user viewing cases not in their stages */}
