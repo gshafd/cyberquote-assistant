@@ -3,13 +3,12 @@
 export type TeamRole = 'intake' | 'assignment' | 'underwriting' | 'ops';
 
 export type SubmissionStage = 
-  | 'inbox' 
-  | 'intake' 
-  | 'assignment' 
-  | 'underwriting' 
-  | 'quoted' 
-  | 'bound' 
-  | 'declined';
+  | 'submission' 
+  | 'data_collection' 
+  | 'risk_assessment' 
+  | 'pricing' 
+  | 'quotation' 
+  | 'binding';
 
 export type IntakeSubstage = 
   | 'document_parsing' 

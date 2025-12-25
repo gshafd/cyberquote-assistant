@@ -82,7 +82,7 @@ export function InboxPage() {
     const submission: Submission = {
       id: `sub-${Date.now()}`,
       scenarioId,
-      stage: 'intake',
+      stage: 'data_collection',
       substage: 'document_parsing',
       sourceEmail: email,
       producer,
