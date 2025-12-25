@@ -35,7 +35,7 @@ export function WorkbenchPage() {
   const calculateStageConfidence = (sub: Submission): number => {
     const fields: number[] = [];
     
-    if (sub.stage === 'intake') {
+    if (sub.stage === 'data_collection') {
       fields.push(
         sub.insured.name.confidence,
         sub.insured.industry.confidence,
@@ -44,9 +44,9 @@ export function WorkbenchPage() {
         sub.controls.hasMFA.confidence,
         sub.controls.hasSOC2.confidence,
       );
-    } else if (sub.stage === 'assignment') {
+    } else if (sub.stage === 'risk_assessment') {
       fields.push(sub.confidence);
-    } else if (sub.stage === 'underwriting' && sub.riskProfile) {
+    } else if (sub.stage === 'pricing' && sub.riskProfile) {
       fields.push(
         sub.riskProfile.overallScore.confidence,
         sub.riskProfile.controlsScore.confidence,
@@ -91,18 +91,18 @@ export function WorkbenchPage() {
       const confidenceThreshold = 75;
       const isHighConfidence = !hasLow && avgConfidence >= confidenceThreshold;
       
-      // Check if we should auto-progress from intake_complete to assignment
-      if (sub.stage === 'intake' && sub.substage === 'intake_complete' && isHighConfidence) {
+      // Check if we should auto-progress from data_collection to risk_assessment
+      if (sub.stage === 'data_collection' && sub.substage === 'intake_complete' && isHighConfidence) {
         autoProgressingRef.current.add(sub.id);
         toast.success(`Auto-advancing ${sub.insured.name.value}`, {
-          description: `High confidence (${avgConfidence}%) - moving to Assignment`,
+          description: `High confidence (${avgConfidence}%) - moving to Risk Assessment`,
           icon: <Zap className="text-primary" />,
         });
         
         setTimeout(() => {
           dispatch({
             type: 'ADVANCE_STAGE',
-            payload: { submissionId: sub.id, newStage: 'assignment', substage: 'workload_balance' }
+            payload: { submissionId: sub.id, newStage: 'risk_assessment', substage: 'risk_profiling' }
           });
           autoProgressingRef.current.delete(sub.id);
         }, 800);
@@ -110,7 +110,7 @@ export function WorkbenchPage() {
       }
       
       // Mark for review if low confidence and at intake_complete
-      if (sub.stage === 'intake' && sub.substage === 'intake_complete' && hasLow && !sub.requiresHumanReview) {
+      if (sub.stage === 'data_collection' && sub.substage === 'intake_complete' && hasLow && !sub.requiresHumanReview) {
         dispatch({
           type: 'UPDATE_SUBMISSION',
           payload: { ...sub, requiresHumanReview: true, reviewReason: reason }
@@ -121,8 +121,8 @@ export function WorkbenchPage() {
         return;
       }
       
-      // Check if we should auto-progress through assignment stage
-      if (sub.stage === 'assignment' && isHighConfidence) {
+      // Check if we should auto-progress through risk_assessment stage
+      if (sub.stage === 'risk_assessment' && isHighConfidence) {
         autoProgressingRef.current.add(sub.id);
         
         // Auto-assign underwriter if not assigned
@@ -152,16 +152,16 @@ export function WorkbenchPage() {
           }
         }
         
-        toast.success(`Auto-progressing ${sub.insured.name.value} through Assignment`, {
-          description: `High confidence (${avgConfidence}%) - advancing to Underwriting`,
+        toast.success(`Auto-progressing ${sub.insured.name.value} through Risk Assessment`, {
+          description: `High confidence (${avgConfidence}%) - advancing to Pricing`,
           icon: <Zap className="text-primary" />,
         });
         
-        // Move to underwriting after a brief delay
+        // Move to pricing after a brief delay
         setTimeout(() => {
           dispatch({
             type: 'ADVANCE_STAGE',
-            payload: { submissionId: sub.id, newStage: 'underwriting', substage: 'risk_profiling' }
+            payload: { submissionId: sub.id, newStage: 'pricing', substage: 'pricing' }
           });
           autoProgressingRef.current.delete(sub.id);
         }, 1000);
@@ -172,13 +172,13 @@ export function WorkbenchPage() {
   // Filter submissions based on role visibility
   const roleSubmissions = state.submissions.filter(s => {
     if (state.currentRole === 'intake') {
-      return s.stage === 'intake';
+      return s.stage === 'data_collection' || s.stage === 'submission';
     }
     if (state.currentRole === 'assignment') {
-      return s.stage === 'assignment' || (s.stage !== 'intake' && s.stage !== 'inbox');
+      return s.stage === 'risk_assessment' || s.stage === 'pricing' || s.stage === 'quotation' || s.stage === 'binding';
     }
     if (state.currentRole === 'underwriting') {
-      return ['underwriting', 'quoted', 'bound'].includes(s.stage);
+      return ['pricing', 'quotation', 'binding'].includes(s.stage);
     }
     return false;
   });
@@ -186,20 +186,20 @@ export function WorkbenchPage() {
   const selectedSubmission = state.submissions.find(s => s.id === state.selectedSubmissionId);
 
   const canViewDetails = (sub: Submission): boolean => {
-    if (state.currentRole === 'intake') return sub.stage === 'intake';
+    if (state.currentRole === 'intake') return sub.stage === 'data_collection' || sub.stage === 'submission';
     if (state.currentRole === 'assignment') {
-      return sub.stage === 'assignment' || sub.stage === 'underwriting' || sub.stage === 'quoted' || sub.stage === 'bound';
+      return sub.stage === 'risk_assessment' || sub.stage === 'pricing' || sub.stage === 'quotation' || sub.stage === 'binding';
     }
     if (state.currentRole === 'underwriting') {
-      return ['underwriting', 'quoted', 'bound'].includes(sub.stage);
+      return ['pricing', 'quotation', 'binding'].includes(sub.stage);
     }
     return false;
   };
 
   const canEdit = (sub: Submission): boolean => {
-    if (state.currentRole === 'intake') return sub.stage === 'intake';
-    if (state.currentRole === 'assignment') return sub.stage === 'assignment';
-    if (state.currentRole === 'underwriting') return ['underwriting', 'quoted'].includes(sub.stage);
+    if (state.currentRole === 'intake') return sub.stage === 'data_collection' || sub.stage === 'submission';
+    if (state.currentRole === 'assignment') return sub.stage === 'risk_assessment';
+    if (state.currentRole === 'underwriting') return ['pricing', 'quotation'].includes(sub.stage);
     return false;
   };
 
@@ -237,21 +237,18 @@ export function WorkbenchPage() {
     let newStage: SubmissionStage = sub.stage;
     let newSubstage: string = sub.substage;
 
-    // Intake substage progression
-    if (sub.stage === 'intake') {
+    // Data Collection substage progression
+    if (sub.stage === 'data_collection') {
       const intakeOrder: IntakeSubstage[] = ['document_parsing', 'producer_verification', 'initial_validation', 'intake_complete'];
       const currentIdx = intakeOrder.indexOf(sub.substage as IntakeSubstage);
       
       if (currentIdx < intakeOrder.length - 1) {
-        // Not at intake_complete yet, advance to next substage
         newSubstage = intakeOrder[currentIdx + 1];
       } else if (sub.substage === 'intake_complete') {
-        // At intake_complete, move to assignment stage
         const avgConfidence = calculateStageConfidence(sub);
         const { hasLow, reason } = hasLowConfidenceFields(sub);
         
         if (hasLow) {
-          // Mark for human review instead of advancing
           toast.warning('Human review required', { description: reason });
           dispatch({
             type: 'UPDATE_SUBMISSION',
@@ -260,35 +257,42 @@ export function WorkbenchPage() {
           return;
         }
         
-        newStage = 'assignment';
-        newSubstage = 'workload_balance';
-        toast.success(`Moving ${sub.insured.name.value} to Assignment`, {
+        newStage = 'risk_assessment';
+        newSubstage = 'risk_profiling';
+        toast.success(`Moving ${sub.insured.name.value} to Risk Assessment`, {
           description: `Confidence: ${avgConfidence}%`,
         });
       }
     }
-    // Assignment substage progression
-    else if (sub.stage === 'assignment') {
-      const assignmentOrder: AssignmentSubstage[] = ['workload_balance', 'specialist_match', 'assignment_complete'];
-      const currentIdx = assignmentOrder.indexOf(sub.substage as AssignmentSubstage);
-      if (currentIdx < assignmentOrder.length - 1) {
-        newSubstage = assignmentOrder[currentIdx + 1];
+    // Risk Assessment substage progression
+    else if (sub.stage === 'risk_assessment') {
+      const assessmentOrder: string[] = ['risk_profiling', 'rules_check', 'coverage_determination'];
+      const currentIdx = assessmentOrder.indexOf(sub.substage);
+      if (currentIdx < assessmentOrder.length - 1) {
+        newSubstage = assessmentOrder[currentIdx + 1];
       } else {
-        newStage = 'underwriting';
-        newSubstage = 'risk_profiling';
-        toast.success(`Moving ${sub.insured.name.value} to Underwriting`);
+        newStage = 'pricing';
+        newSubstage = 'pricing';
+        toast.success(`Moving ${sub.insured.name.value} to Pricing`);
       }
     }
-    // Underwriting substage progression
-    else if (sub.stage === 'underwriting') {
-      const uwOrder: UnderwritingSubstage[] = ['risk_profiling', 'rules_check', 'coverage_determination', 'pricing', 'quote_draft', 'quote_review', 'binding'];
-      const currentIdx = uwOrder.indexOf(sub.substage as UnderwritingSubstage);
-      if (currentIdx < uwOrder.length - 1) {
-        newSubstage = uwOrder[currentIdx + 1];
+    // Pricing substage progression
+    else if (sub.stage === 'pricing') {
+      const pricingOrder: string[] = ['pricing', 'quote_draft'];
+      const currentIdx = pricingOrder.indexOf(sub.substage);
+      if (currentIdx < pricingOrder.length - 1) {
+        newSubstage = pricingOrder[currentIdx + 1];
       } else {
-        newStage = 'quoted';
+        newStage = 'quotation';
+        newSubstage = 'quote_review';
         toast.success(`Quote generated for ${sub.insured.name.value}`);
       }
+    }
+    // Quotation to Binding
+    else if (sub.stage === 'quotation') {
+      newStage = 'binding';
+      newSubstage = 'binding';
+      toast.success(`Moving ${sub.insured.name.value} to Binding`);
     }
 
     dispatch({ 
@@ -351,7 +355,7 @@ export function WorkbenchPage() {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Badge variant="outline" className="text-xs capitalize">
-                      {sub.stage}
+                      {sub.stage.replace(/_/g, ' ')}
                     </Badge>
                     <Badge variant="secondary" className="text-xs">
                       {sub.substage.replace(/_/g, ' ')}
@@ -364,10 +368,10 @@ export function WorkbenchPage() {
                     </div>
                   )}
                   {/* Show completion status for assignment role viewing past stages */}
-                  {state.currentRole === 'assignment' && sub.stage !== 'assignment' && (
+                  {state.currentRole === 'assignment' && sub.stage !== 'risk_assessment' && (
                     <div className="mt-2 flex items-center gap-1 text-xs text-success">
                       <CheckCircle size={12} />
-                      {sub.stage === 'underwriting' || sub.stage === 'quoted' || sub.stage === 'bound' ? 'In UW Review' : 'Completed'}
+                      {sub.stage === 'pricing' || sub.stage === 'quotation' || sub.stage === 'binding' ? 'In Progress' : 'Completed'}
                     </div>
                   )}
                 </div>
@@ -406,7 +410,7 @@ export function WorkbenchPage() {
           </Card>
 
           {/* Role-specific substage views */}
-          {selectedSubmission.stage === 'intake' && state.currentRole === 'intake' && (
+          {(selectedSubmission.stage === 'data_collection' || selectedSubmission.stage === 'submission') && state.currentRole === 'intake' && (
             <IntakeSubstages
               submission={selectedSubmission}
               currentSubstage={selectedSubmission.substage as IntakeSubstage}
@@ -417,7 +421,7 @@ export function WorkbenchPage() {
             />
           )}
 
-          {selectedSubmission.stage === 'assignment' && state.currentRole === 'assignment' && (
+          {selectedSubmission.stage === 'risk_assessment' && state.currentRole === 'assignment' && (
             <AssignmentSubstages
               submission={selectedSubmission}
               currentSubstage={selectedSubmission.substage as AssignmentSubstage}
@@ -427,7 +431,7 @@ export function WorkbenchPage() {
             />
           )}
 
-          {['underwriting', 'quoted'].includes(selectedSubmission.stage) && state.currentRole === 'underwriting' && (
+          {['pricing', 'quotation'].includes(selectedSubmission.stage) && state.currentRole === 'underwriting' && (
             <UnderwritingSubstages
               submission={selectedSubmission}
               currentSubstage={selectedSubmission.substage as UnderwritingSubstage}
@@ -438,16 +442,16 @@ export function WorkbenchPage() {
             />
           )}
 
-          {/* Read-only view for assignment team viewing UW stage submissions */}
-          {state.currentRole === 'assignment' && selectedSubmission.stage !== 'assignment' && (
+          {/* Read-only view for assignment team viewing past stages */}
+          {state.currentRole === 'assignment' && selectedSubmission.stage !== 'risk_assessment' && (
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center text-muted-foreground">
                   <CheckCircle size={48} className="mx-auto mb-4 text-success opacity-50" />
-                  <p className="font-medium">Assignment Completed</p>
+                  <p className="font-medium">Assessment Completed</p>
                   <p className="text-sm mt-1">
                     This submission has been assigned to {selectedSubmission.assignedUnderwriter?.name || 'an underwriter'} 
-                    and is currently in the {selectedSubmission.stage} stage.
+                    and is currently in the {selectedSubmission.stage.replace(/_/g, ' ')} stage.
                   </p>
                 </div>
               </CardContent>

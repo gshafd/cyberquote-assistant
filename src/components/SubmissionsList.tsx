@@ -11,28 +11,32 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Eye, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Eye, AlertTriangle, CheckCircle2, Edit, MoreHorizontal } from 'lucide-react';
 import { SubmissionStage } from '@/types/underwriting';
 import { format } from 'date-fns';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const stageColors: Record<SubmissionStage, string> = {
-  inbox: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  intake: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  assignment: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  underwriting: 'bg-primary/10 text-primary border-primary/20',
-  quoted: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-  bound: 'bg-green-500/10 text-green-500 border-green-500/20',
-  declined: 'bg-destructive/10 text-destructive border-destructive/20',
+  submission: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+  data_collection: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  risk_assessment: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+  pricing: 'bg-primary/10 text-primary border-primary/20',
+  quotation: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  binding: 'bg-green-500/10 text-green-500 border-green-500/20',
 };
 
 const stageLabels: Record<SubmissionStage, string> = {
-  inbox: 'Inbox',
-  intake: 'Intake & Review',
-  assignment: 'Assignment & Triage',
-  underwriting: 'Underwriting',
-  quoted: 'Quoted',
-  bound: 'Bound',
-  declined: 'Declined',
+  submission: 'Submission',
+  data_collection: 'Data Collection',
+  risk_assessment: 'Risk Assessment',
+  pricing: 'Pricing & Rating',
+  quotation: 'Quotation',
+  binding: 'Binding & Issuing',
 };
 
 export function SubmissionsList() {
@@ -78,7 +82,7 @@ export function SubmissionsList() {
                 <TableHead className="text-xs font-medium">Underwriter</TableHead>
                 <TableHead className="text-xs font-medium">Intake User</TableHead>
                 <TableHead className="text-xs font-medium">Confidence</TableHead>
-                <TableHead className="text-xs font-medium text-center">Action</TableHead>
+                <TableHead className="text-xs font-medium text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -141,7 +145,7 @@ export function SubmissionsList() {
                     )}
                   </TableCell>
                   <TableCell className="text-sm">
-                    {submission.stage === 'intake' || submission.stage === 'inbox' ? (
+                    {submission.stage === 'submission' || submission.stage === 'data_collection' ? (
                       <span className="text-foreground">System</span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
@@ -168,18 +172,40 @@ export function SubmissionsList() {
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
-                    <Button 
-                      size="sm" 
-                      variant="ghost"
-                      className="h-8 px-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewSubmission(submission.id);
-                      }}
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
+                    <div className="flex items-center justify-center gap-1">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        className="h-8 px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewSubmission(submission.id);
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewSubmission(submission.id);
+                          }}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Submission
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

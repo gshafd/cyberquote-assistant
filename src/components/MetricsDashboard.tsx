@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppState } from '@/context/AppContext';
 import { 
-  Inbox, 
-  FileSearch, 
-  UserCheck, 
+  FileUp, 
+  Database, 
+  ShieldCheck, 
+  Calculator, 
   FileText, 
-  CheckCircle2, 
-  XCircle,
+  CheckCircle2,
   TrendingUp,
   Clock,
   Zap,
@@ -14,14 +14,13 @@ import {
 } from 'lucide-react';
 import { SubmissionStage } from '@/types/underwriting';
 
-const stageConfig: Record<SubmissionStage, { label: string; icon: typeof Inbox; color: string }> = {
-  inbox: { label: 'Inbox', icon: Inbox, color: 'text-blue-500' },
-  intake: { label: 'Intake', icon: FileSearch, color: 'text-amber-500' },
-  assignment: { label: 'Assignment', icon: UserCheck, color: 'text-purple-500' },
-  underwriting: { label: 'Underwriting', icon: FileText, color: 'text-primary' },
-  quoted: { label: 'Quoted', icon: FileText, color: 'text-emerald-500' },
-  bound: { label: 'Bound', icon: CheckCircle2, color: 'text-green-500' },
-  declined: { label: 'Declined', icon: XCircle, color: 'text-destructive' },
+const stageConfig: Record<SubmissionStage, { label: string; icon: typeof FileUp; color: string }> = {
+  submission: { label: 'Submission', icon: FileUp, color: 'text-blue-500' },
+  data_collection: { label: 'Data Collection', icon: Database, color: 'text-amber-500' },
+  risk_assessment: { label: 'Risk Assessment', icon: ShieldCheck, color: 'text-purple-500' },
+  pricing: { label: 'Pricing', icon: Calculator, color: 'text-primary' },
+  quotation: { label: 'Quotation', icon: FileText, color: 'text-emerald-500' },
+  binding: { label: 'Binding', icon: CheckCircle2, color: 'text-green-500' },
 };
 
 export function MetricsDashboard() {
@@ -102,7 +101,7 @@ export function MetricsDashboard() {
           <CardTitle className="text-sm font-medium text-muted-foreground">Submissions by Stage</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {(Object.keys(stageConfig) as SubmissionStage[]).map((stage) => {
               const config = stageConfig[stage];
               const Icon = config.icon;

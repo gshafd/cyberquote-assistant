@@ -10,8 +10,15 @@ interface StageProgressProps {
 
 const stages: { id: SubmissionStage; label: string; substages: { id: string; label: string }[] }[] = [
   {
-    id: 'intake',
-    label: 'Intake',
+    id: 'submission',
+    label: 'Submission',
+    substages: [
+      { id: 'document_parsing', label: 'Document Parsing' },
+    ],
+  },
+  {
+    id: 'data_collection',
+    label: 'Data Collection',
     substages: [
       { id: 'document_parsing', label: 'Document Parsing' },
       { id: 'producer_verification', label: 'Producer Verification' },
@@ -20,30 +27,39 @@ const stages: { id: SubmissionStage; label: string; substages: { id: string; lab
     ],
   },
   {
-    id: 'assignment',
-    label: 'Assignment',
-    substages: [
-      { id: 'workload_balance', label: 'Workload Balance' },
-      { id: 'specialist_match', label: 'Specialist Match' },
-      { id: 'assignment_complete', label: 'Complete' },
-    ],
-  },
-  {
-    id: 'underwriting',
-    label: 'Underwriting',
+    id: 'risk_assessment',
+    label: 'Risk Assessment',
     substages: [
       { id: 'risk_profiling', label: 'Risk Profiling' },
       { id: 'rules_check', label: 'Rules Check' },
       { id: 'coverage_determination', label: 'Coverage' },
+    ],
+  },
+  {
+    id: 'pricing',
+    label: 'Pricing',
+    substages: [
       { id: 'pricing', label: 'Pricing' },
       { id: 'quote_draft', label: 'Quote Draft' },
+    ],
+  },
+  {
+    id: 'quotation',
+    label: 'Quotation',
+    substages: [
       { id: 'quote_review', label: 'Quote Review' },
+    ],
+  },
+  {
+    id: 'binding',
+    label: 'Binding',
+    substages: [
       { id: 'binding', label: 'Binding' },
     ],
   },
 ];
 
-const stageOrder: SubmissionStage[] = ['inbox', 'intake', 'assignment', 'underwriting', 'quoted', 'bound'];
+const stageOrder: SubmissionStage[] = ['submission', 'data_collection', 'risk_assessment', 'pricing', 'quotation', 'binding'];
 
 export function StageProgress({ currentStage, currentSubstage, className }: StageProgressProps) {
   const currentStageIndex = stageOrder.indexOf(currentStage);
@@ -102,7 +118,7 @@ export function StageProgress({ currentStage, currentSubstage, className }: Stag
       </div>
 
       {/* Current stage substages */}
-      {currentStage !== 'inbox' && currentStage !== 'quoted' && currentStage !== 'bound' && (
+      {currentStage !== 'submission' && currentStage !== 'binding' && (
         <div className="bg-muted/30 rounded-lg p-4">
           <h4 className="text-sm font-medium text-muted-foreground mb-3">
             {stages.find((s) => s.id === currentStage)?.label} Progress
