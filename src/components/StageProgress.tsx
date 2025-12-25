@@ -18,12 +18,21 @@ const stages: { id: SubmissionStage; label: string; substages: { id: string; lab
   },
   {
     id: 'data_collection',
-    label: 'Data Collection',
+    label: 'Intake',
     substages: [
       { id: 'document_parsing', label: 'Document Parsing' },
       { id: 'producer_verification', label: 'Producer Verification' },
       { id: 'initial_validation', label: 'Initial Validation' },
       { id: 'intake_complete', label: 'Complete' },
+    ],
+  },
+  {
+    id: 'assignment',
+    label: 'Assignment',
+    substages: [
+      { id: 'workload_balance', label: 'Workload Analysis' },
+      { id: 'specialist_match', label: 'Specialist Match' },
+      { id: 'assignment_complete', label: 'Complete' },
     ],
   },
   {
@@ -59,7 +68,7 @@ const stages: { id: SubmissionStage; label: string; substages: { id: string; lab
   },
 ];
 
-const stageOrder: SubmissionStage[] = ['submission', 'data_collection', 'risk_assessment', 'pricing', 'quotation', 'binding'];
+const stageOrder: SubmissionStage[] = ['submission', 'data_collection', 'assignment', 'risk_assessment', 'pricing', 'quotation', 'binding'];
 
 export function StageProgress({ currentStage, currentSubstage, className }: StageProgressProps) {
   const currentStageIndex = stageOrder.indexOf(currentStage);

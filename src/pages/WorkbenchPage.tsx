@@ -157,14 +157,57 @@ export function WorkbenchPage() {
           return;
         }
         
-        // At intake_complete, move to risk_assessment if all high confidence
+        // At intake_complete, move to assignment stage if all high confidence
         if (sub.substage === 'intake_complete' && isHighConfidence) {
           autoProgressingRef.current.add(sub.id);
           toast.success(`Auto-advancing ${sub.insured.name.value}`, {
-            description: `High confidence (${avgConfidence}%) - moving to Risk Assessment`,
+            description: `High confidence (${avgConfidence}%) - moving to Assignment`,
             icon: <Zap className="text-primary" />,
           });
           
+          setTimeout(() => {
+            dispatch({
+              type: 'ADVANCE_STAGE',
+              payload: { submissionId: sub.id, newStage: 'assignment', substage: 'workload_balance' }
+            });
+            autoProgressingRef.current.delete(sub.id);
+          }, 800);
+          return;
+        }
+      }
+
+      // Auto-progress through assignment substages
+      if (sub.stage === 'assignment') {
+        const assignmentOrder: AssignmentSubstage[] = ['workload_balance', 'specialist_match', 'assignment_complete'];
+        const currentIdx = assignmentOrder.indexOf(sub.substage as AssignmentSubstage);
+
+        if (isCurrentSubstageHighConf && currentIdx >= 0 && currentIdx < assignmentOrder.length - 1) {
+          autoProgressingRef.current.add(sub.id);
+          const nextSubstage = assignmentOrder[currentIdx + 1];
+
+          toast.success(`Auto-advancing ${sub.insured.name.value}`, {
+            description: `High confidence - moving to ${nextSubstage.replace(/_/g, ' ')}`,
+            icon: <Zap className="text-primary" />,
+          });
+
+          setTimeout(() => {
+            dispatch({
+              type: 'ADVANCE_STAGE',
+              payload: { submissionId: sub.id, newStage: 'assignment', substage: nextSubstage }
+            });
+            autoProgressingRef.current.delete(sub.id);
+          }, 600);
+          return;
+        }
+
+        // At assignment_complete with underwriter assigned, move to risk_assessment
+        if (sub.substage === 'assignment_complete' && sub.assignedUnderwriter && isHighConfidence) {
+          autoProgressingRef.current.add(sub.id);
+          toast.success(`Auto-advancing ${sub.insured.name.value}`, {
+            description: `Assignment complete - moving to Risk Assessment`,
+            icon: <Zap className="text-primary" />,
+          });
+
           setTimeout(() => {
             dispatch({
               type: 'ADVANCE_STAGE',
@@ -373,11 +416,24 @@ export function WorkbenchPage() {
           return;
         }
         
-        newStage = 'risk_assessment';
-        newSubstage = 'risk_profiling';
-        toast.success(`Moving ${sub.insured.name.value} to Risk Assessment`, {
+        newStage = 'assignment';
+        newSubstage = 'workload_balance';
+        toast.success(`Moving ${sub.insured.name.value} to Assignment`, {
           description: `Confidence: ${avgConfidence}%`,
         });
+      }
+    }
+    // Assignment substage progression
+    else if (sub.stage === 'assignment') {
+      const assignmentOrder: AssignmentSubstage[] = ['workload_balance', 'specialist_match', 'assignment_complete'];
+      const currentIdx = assignmentOrder.indexOf(sub.substage as AssignmentSubstage);
+      
+      if (currentIdx < assignmentOrder.length - 1) {
+        newSubstage = assignmentOrder[currentIdx + 1];
+      } else if (sub.substage === 'assignment_complete') {
+        newStage = 'risk_assessment';
+        newSubstage = 'risk_profiling';
+        toast.success(`Moving ${sub.insured.name.value} to Risk Assessment`);
       }
     }
     // Risk Assessment substage progression
@@ -496,7 +552,7 @@ export function WorkbenchPage() {
                       Pending (in intake)
                     </div>
                   )}
-                  {state.currentRole === 'assignment' && !['data_collection', 'submission', 'risk_assessment'].includes(sub.stage) && (
+                  {state.currentRole === 'assignment' && !['data_collection', 'submission', 'assignment'].includes(sub.stage) && (
                     <div className="mt-2 flex items-center gap-1 text-xs text-success">
                       <CheckCircle size={12} />
                       Assigned • In {sub.stage.replace(/_/g, ' ')}
@@ -565,7 +621,7 @@ export function WorkbenchPage() {
             </Card>
           )}
 
-          {selectedSubmission.stage === 'risk_assessment' && state.currentRole === 'assignment' && (
+          {selectedSubmission.stage === 'assignment' && state.currentRole === 'assignment' && (
             <AssignmentSubstages
               submission={selectedSubmission}
               currentSubstage={selectedSubmission.substage as AssignmentSubstage}
@@ -586,8 +642,8 @@ export function WorkbenchPage() {
             />
           )}
 
-          {/* Assignment user viewing cases not in risk_assessment - read-only status */}
-          {state.currentRole === 'assignment' && selectedSubmission.stage !== 'risk_assessment' && (
+          {/* Assignment user viewing cases not in assignment stage - read-only status */}
+          {state.currentRole === 'assignment' && selectedSubmission.stage !== 'assignment' && (
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center text-muted-foreground">

@@ -17,6 +17,7 @@ import { SubmissionStage } from '@/types/underwriting';
 const stageConfig: Record<SubmissionStage, { label: string; icon: typeof FileUp; color: string }> = {
   submission: { label: 'Submission', icon: FileUp, color: 'text-blue-500' },
   data_collection: { label: 'Data Collection', icon: Database, color: 'text-amber-500' },
+  assignment: { label: 'Assignment', icon: Users, color: 'text-cyan-500' },
   risk_assessment: { label: 'Risk Assessment', icon: ShieldCheck, color: 'text-purple-500' },
   pricing: { label: 'Pricing', icon: Calculator, color: 'text-primary' },
   quotation: { label: 'Quotation', icon: FileText, color: 'text-emerald-500' },
