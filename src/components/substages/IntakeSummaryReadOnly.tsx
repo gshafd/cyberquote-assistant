@@ -81,20 +81,25 @@ export function IntakeSummaryReadOnly({ submission }: IntakeSummaryReadOnlyProps
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground uppercase">Producer Name</p>
-              <p className="font-medium">{submission.producer.name}</p>
+              <p className="font-medium">{submission.producer.name.value}</p>
+              <ConfidenceBadge score={submission.producer.name.confidence} size="sm" />
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground uppercase">Agency</p>
-              <p className="font-medium">{submission.producer.agency}</p>
-              <Badge variant="outline" className="capitalize">{submission.producer.tier}</Badge>
+              <p className="font-medium">{submission.producer.agency.value}</p>
+              <Badge variant="outline" className="capitalize">{submission.producer.tier.value}</Badge>
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground uppercase">License</p>
-              <p className="font-medium">{submission.producer.license}</p>
-              <Badge className="bg-success/20 text-success">Verified</Badge>
+              <p className="font-medium">{submission.producer.license.value}</p>
+              <ConfidenceBadge score={submission.producer.license.confidence} size="sm" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground uppercase">Email</p>
+              <p className="font-medium">{submission.producer.email.value}</p>
             </div>
           </div>
         </CardContent>

@@ -75,15 +75,15 @@ export interface EmailAttachment {
 
 export interface Producer {
   id: string;
-  name: string;
-  code: string;
-  agency: string;
-  license: string;
-  state: string;
-  email: string;
-  phone: string;
-  tier: 'preferred' | 'standard' | 'new';
-  activeContracts: number;
+  name: AIField<string>;
+  code: AIField<string>;
+  agency: AIField<string>;
+  license: AIField<string>;
+  state: AIField<string>;
+  email: AIField<string>;
+  phone: AIField<string>;
+  tier: AIField<'preferred' | 'standard' | 'new'>;
+  activeContracts: AIField<number>;
 }
 
 export interface Insured {

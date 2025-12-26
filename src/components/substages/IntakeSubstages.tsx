@@ -2,7 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EditableField } from '@/components/EditableField';
-import { ConfidenceBadge } from '@/components/ConfidenceBadge';
 import { Submission, FeedbackEntry, IntakeSubstage } from '@/types/underwriting';
 import {
   FileSearch,
@@ -11,6 +10,8 @@ import {
   AlertTriangle,
   ArrowRight,
   Zap,
+  Building2,
+  Calendar,
 } from 'lucide-react';
 
 interface IntakeSubstagesProps {
@@ -76,13 +77,13 @@ export function IntakeSubstages({ submission, currentSubstage, onFieldEdit, onAd
         ))}
       </div>
 
-      {/* Document Parsing Results */}
+      {/* Account Details & Company Information */}
       {currentIdx >= 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <FileSearch size={18} className="text-primary" />
-              Document Parsing
+              <Building2 size={18} className="text-primary" />
+              Account Details
               {currentIdx > 0 && <Badge variant="outline" className="text-success border-success">Complete</Badge>}
             </CardTitle>
           </CardHeader>
@@ -94,10 +95,88 @@ export function IntakeSubstages({ submission, currentSubstage, onFieldEdit, onAd
               onSave={(val, comment) => onFieldEdit('insured.name', val, 'Company Name', comment)}
             />
             <EditableField
+              field={submission.insured.dba}
+              label="DBA"
+              fieldPath="insured.dba"
+              onSave={(val, comment) => onFieldEdit('insured.dba', val, 'DBA', comment)}
+            />
+            <EditableField
+              field={submission.insured.address}
+              label="Address"
+              fieldPath="insured.address"
+              onSave={(val, comment) => onFieldEdit('insured.address', val, 'Address', comment)}
+            />
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <EditableField
+                  field={submission.insured.city}
+                  label="City"
+                  fieldPath="insured.city"
+                  onSave={(val, comment) => onFieldEdit('insured.city', val, 'City', comment)}
+                />
+              </div>
+              <div className="w-20">
+                <EditableField
+                  field={submission.insured.state}
+                  label="State"
+                  fieldPath="insured.state"
+                  onSave={(val, comment) => onFieldEdit('insured.state', val, 'State', comment)}
+                />
+              </div>
+              <div className="w-24">
+                <EditableField
+                  field={submission.insured.zip}
+                  label="ZIP"
+                  fieldPath="insured.zip"
+                  onSave={(val, comment) => onFieldEdit('insured.zip', val, 'ZIP', comment)}
+                />
+              </div>
+            </div>
+            <EditableField
+              field={submission.insured.website}
+              label="Website"
+              fieldPath="insured.website"
+              onSave={(val, comment) => onFieldEdit('insured.website', val, 'Website', comment)}
+            />
+            <EditableField
+              field={submission.insured.yearEstablished}
+              label="Year Established"
+              fieldPath="insured.yearEstablished"
+              type="number"
+              onSave={(val, comment) => onFieldEdit('insured.yearEstablished', val, 'Year Established', comment)}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Document Parsing Results - Business Details */}
+      {currentIdx >= 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileSearch size={18} className="text-primary" />
+              Business Classification & Financials
+              {currentIdx > 0 && <Badge variant="outline" className="text-success border-success">Complete</Badge>}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <EditableField
               field={submission.insured.industry}
               label="Industry"
               fieldPath="insured.industry"
               onSave={(val, comment) => onFieldEdit('insured.industry', val, 'Industry', comment)}
+            />
+            <EditableField
+              field={submission.insured.sicCode}
+              label="SIC Code"
+              fieldPath="insured.sicCode"
+              onSave={(val, comment) => onFieldEdit('insured.sicCode', val, 'SIC Code', comment)}
+            />
+            <EditableField
+              field={submission.insured.naicsCode}
+              label="NAICS Code"
+              fieldPath="insured.naicsCode"
+              onSave={(val, comment) => onFieldEdit('insured.naicsCode', val, 'NAICS Code', comment)}
             />
             <EditableField
               field={submission.insured.annualRevenue}
@@ -114,18 +193,41 @@ export function IntakeSubstages({ submission, currentSubstage, onFieldEdit, onAd
               type="number"
               onSave={(val, comment) => onFieldEdit('insured.employeeCount', val, 'Employee Count', comment)}
             />
-            <EditableField
-              field={submission.insured.website}
-              label="Website"
-              fieldPath="insured.website"
-              onSave={(val, comment) => onFieldEdit('insured.website', val, 'Website', comment)}
-            />
-            <EditableField
-              field={submission.insured.sicCode}
-              label="SIC Code"
-              fieldPath="insured.sicCode"
-              onSave={(val, comment) => onFieldEdit('insured.sicCode', val, 'SIC Code', comment)}
-            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Product & Effective Period - Display from quote if available */}
+      {currentIdx >= 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Calendar size={18} className="text-primary" />
+              Product & Effective Period
+              {currentIdx > 0 && <Badge variant="outline" className="text-success border-success">Complete</Badge>}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Product</span>
+              <p className="font-medium text-foreground">Cyber Liability</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Coverage Type</span>
+              <p className="font-medium text-foreground">Primary</p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Effective Date</span>
+              <p className="font-medium text-foreground">
+                {submission.quote?.effectiveDate || 'TBD'}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Expiration Date</span>
+              <p className="font-medium text-foreground">
+                {submission.quote?.expirationDate || 'TBD'}
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -141,27 +243,56 @@ export function IntakeSubstages({ submission, currentSubstage, onFieldEdit, onAd
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground uppercase">Producer Name</p>
-                <p className="font-medium">{submission.producer.name}</p>
-                <ConfidenceBadge score={95} size="sm" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground uppercase">Agency</p>
-                <p className="font-medium">{submission.producer.agency}</p>
-                <Badge variant="outline" className="capitalize">{submission.producer.tier}</Badge>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground uppercase">License</p>
-                <p className="font-medium">{submission.producer.license}</p>
-                <Badge className="bg-success/20 text-success">Verified</Badge>
-              </div>
-            </div>
-            <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-1">Rationale</p>
-              <p className="text-sm">Producer matched in directory with valid license and preferred tier status. {submission.producer.activeContracts} active contracts.</p>
-              <p className="text-xs text-primary mt-2 font-mono">Source: Producer_Lookup.csv, line 47</p>
+            <div className="grid grid-cols-2 gap-4">
+              <EditableField
+                field={submission.producer.name}
+                label="Producer Name"
+                fieldPath="producer.name"
+                onSave={(val, comment) => onFieldEdit('producer.name', val, 'Producer Name', comment)}
+              />
+              <EditableField
+                field={submission.producer.agency}
+                label="Agency"
+                fieldPath="producer.agency"
+                onSave={(val, comment) => onFieldEdit('producer.agency', val, 'Agency', comment)}
+              />
+              <EditableField
+                field={submission.producer.license}
+                label="License"
+                fieldPath="producer.license"
+                onSave={(val, comment) => onFieldEdit('producer.license', val, 'License', comment)}
+              />
+              <EditableField
+                field={submission.producer.state}
+                label="State"
+                fieldPath="producer.state"
+                onSave={(val, comment) => onFieldEdit('producer.state', val, 'State', comment)}
+              />
+              <EditableField
+                field={submission.producer.email}
+                label="Email"
+                fieldPath="producer.email"
+                onSave={(val, comment) => onFieldEdit('producer.email', val, 'Email', comment)}
+              />
+              <EditableField
+                field={submission.producer.phone}
+                label="Phone"
+                fieldPath="producer.phone"
+                onSave={(val, comment) => onFieldEdit('producer.phone', val, 'Phone', comment)}
+              />
+              <EditableField
+                field={submission.producer.tier}
+                label="Tier"
+                fieldPath="producer.tier"
+                onSave={(val, comment) => onFieldEdit('producer.tier', val, 'Tier', comment)}
+              />
+              <EditableField
+                field={submission.producer.activeContracts}
+                label="Active Contracts"
+                fieldPath="producer.activeContracts"
+                type="number"
+                onSave={(val, comment) => onFieldEdit('producer.activeContracts', val, 'Active Contracts', comment)}
+              />
             </div>
           </CardContent>
         </Card>
