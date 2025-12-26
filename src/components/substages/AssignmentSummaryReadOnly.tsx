@@ -1,13 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ConfidenceBadge } from '@/components/ConfidenceBadge';
-import { Submission, Underwriter } from '@/types/underwriting';
+import { EditableField } from '@/components/EditableField';
+import { Submission, Underwriter, AIField } from '@/types/underwriting';
+import { useAppState } from '@/context/AppContext';
 import {
-  Users,
   CheckCircle,
   Briefcase,
   Target,
-  UserCheck,
+  Building2,
+  FileSearch,
 } from 'lucide-react';
 
 interface AssignmentSummaryReadOnlyProps {
@@ -15,7 +17,18 @@ interface AssignmentSummaryReadOnlyProps {
   underwriters: Underwriter[];
 }
 
+// Helper to create default AIField for optional fields
+const createDefaultAIField = <T,>(value: T): AIField<T> => ({
+  value,
+  confidence: 0,
+  rationale: '',
+  citations: [],
+  isEdited: false,
+});
+
 export function AssignmentSummaryReadOnly({ submission, underwriters }: AssignmentSummaryReadOnlyProps) {
+  const { dispatch } = useAppState();
+
   // Find matching specialists based on industry
   const matchingUWs = underwriters.filter(
     uw => uw.specialty.some(s => 
@@ -24,6 +37,69 @@ export function AssignmentSummaryReadOnly({ submission, underwriters }: Assignme
       s.toLowerCase().includes('healthcare')
     )
   );
+
+  const handleFieldSave = <T extends string | number | boolean>(
+    fieldPath: string,
+    newValue: T,
+    comment: string
+  ) => {
+    const now = new Date().toISOString();
+    const pathParts = fieldPath.split('.');
+    
+    const updatedSubmission = JSON.parse(JSON.stringify(submission));
+    
+    let target = updatedSubmission;
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      target = target[pathParts[i]];
+    }
+    const fieldName = pathParts[pathParts.length - 1];
+    const field = target[fieldName] as AIField<T>;
+    
+    target[fieldName] = {
+      ...field,
+      value: newValue,
+      isEdited: true,
+      originalValue: field.originalValue ?? field.value,
+      editedBy: 'Assignment Specialist',
+      editedAt: now,
+      confidence: 100,
+    };
+
+    updatedSubmission.updatedAt = now;
+    updatedSubmission.history = [
+      ...updatedSubmission.history,
+      {
+        id: `event-${Date.now()}`,
+        timestamp: now,
+        type: 'field_edit' as const,
+        actor: 'Assignment Specialist',
+        actorRole: 'assignment' as const,
+        description: `Edited ${fieldPath}: "${field.value}" → "${newValue}"${comment ? ` (${comment})` : ''}`,
+      },
+    ];
+
+    // Add to submission's feedbackLog
+    if (comment) {
+      updatedSubmission.feedbackLog = [
+        ...updatedSubmission.feedbackLog,
+        {
+          id: `feedback-${Date.now()}`,
+          submissionId: submission.id,
+          fieldPath,
+          fieldLabel: fieldPath.split('.').pop() || fieldPath,
+          originalValue: field.value,
+          newValue,
+          editedBy: 'Assignment Specialist',
+          editedAt: now,
+          feedbackComment: comment,
+          stage: submission.stage,
+          substage: submission.substage,
+        },
+      ];
+    }
+
+    dispatch({ type: 'UPDATE_SUBMISSION', payload: updatedSubmission });
+  };
 
   return (
     <div className="space-y-4">
@@ -38,34 +114,79 @@ export function AssignmentSummaryReadOnly({ submission, underwriters }: Assignme
         </div>
       </div>
 
-      {/* Intake Summary */}
+      {/* Editable Account Details */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <CheckCircle size={18} className="text-success" />
-            Intake Summary
-            <Badge variant="outline" className="text-success border-success">Completed</Badge>
+            <Building2 size={18} className="text-primary" />
+            Account Details
+            <Badge variant="outline" className="text-primary border-primary">Editable</Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground text-xs">Company</p>
-              <p className="font-medium">{submission.insured.name.value}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Industry</p>
-              <p className="font-medium">{submission.insured.industry.value}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Revenue</p>
-              <p className="font-medium">${(submission.insured.annualRevenue.value / 1000000).toFixed(1)}M</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Overall Confidence</p>
-              <ConfidenceBadge score={submission.confidence} />
-            </div>
+        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <EditableField
+            field={submission.insured.name}
+            label="Company Name"
+            fieldPath="insured.name"
+            onSave={(val, comment) => handleFieldSave('insured.name', val, comment)}
+          />
+          <EditableField
+            field={submission.insured.industry}
+            label="Industry"
+            fieldPath="insured.industry"
+            onSave={(val, comment) => handleFieldSave('insured.industry', val, comment)}
+          />
+          <EditableField
+            field={submission.insured.annualRevenue}
+            label="Annual Revenue"
+            fieldPath="insured.annualRevenue"
+            type="number"
+            formatValue={(val) => `$${(Number(val) / 1000000).toFixed(1)}M`}
+            onSave={(val, comment) => handleFieldSave('insured.annualRevenue', val, comment)}
+          />
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground uppercase">Overall Confidence</p>
+            <ConfidenceBadge score={submission.confidence} />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Editable Business Classification */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileSearch size={18} className="text-primary" />
+            Business Classification
+            <Badge variant="outline" className="text-primary border-primary">Editable</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <EditableField
+            field={submission.insured.sicCode || createDefaultAIField('N/A')}
+            label="SIC Code"
+            fieldPath="insured.sicCode"
+            onSave={(val, comment) => handleFieldSave('insured.sicCode', val, comment)}
+          />
+          <EditableField
+            field={submission.insured.naicsCode || createDefaultAIField('N/A')}
+            label="NAICS Code"
+            fieldPath="insured.naicsCode"
+            onSave={(val, comment) => handleFieldSave('insured.naicsCode', val, comment)}
+          />
+          <EditableField
+            field={submission.insured.employeeCount}
+            label="Employee Count"
+            fieldPath="insured.employeeCount"
+            type="number"
+            formatValue={(val) => Number(val).toLocaleString()}
+            onSave={(val, comment) => handleFieldSave('insured.employeeCount', val, comment)}
+          />
+          <EditableField
+            field={submission.insured.website}
+            label="Website"
+            fieldPath="insured.website"
+            onSave={(val, comment) => handleFieldSave('insured.website', val, comment)}
+          />
         </CardContent>
       </Card>
 
