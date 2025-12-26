@@ -898,7 +898,7 @@ export const initialSubmissions: Submission[] = [
   {
     id: 'sub-edgecase-001',
     scenarioId: 'scenario-c',
-    stage: 'risk_assessment',
+    stage: 'pricing',
     substage: 'pricing',
     sourceEmail: brokerEmails[2],
     producer: producers[2],

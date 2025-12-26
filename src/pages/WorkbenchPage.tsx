@@ -665,7 +665,7 @@ export function WorkbenchPage() {
             />
           )}
 
-{['risk_assessment', 'pricing', 'quotation'].includes(selectedSubmission.stage) && state.currentRole === 'underwriting' && (
+{['risk_assessment', 'pricing', 'quotation', 'binding'].includes(selectedSubmission.stage) && state.currentRole === 'underwriting' && (
             <UnderwritingSubstages
               submission={selectedSubmission}
               currentSubstage={selectedSubmission.substage as UnderwritingSubstage}
