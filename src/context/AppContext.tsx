@@ -196,24 +196,29 @@ function appReducer(state: AppState, action: Action): AppState {
   }
 }
 
+// Create context with proper typing
 const AppContext = createContext<{
   state: AppState;
   dispatch: React.Dispatch<Action>;
-} | null>(null);
+} | undefined>(undefined);
 
+// Provider component
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(appReducer, initialState);
+  const [state, dispatch] = useReducer(appReducer, undefined, getInitialState);
+
+  const value = React.useMemo(() => ({ state, dispatch }), [state]);
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );
 }
 
+// Hook for consuming context
 export function useAppState() {
   const context = useContext(AppContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAppState must be used within an AppProvider');
   }
   return context;
