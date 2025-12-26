@@ -390,8 +390,8 @@ export function WorkbenchPage() {
   // Can view workflow details (interact with substages) - limited by role
   const canInteractWithWorkflow = (sub: Submission): boolean => {
     if (state.currentRole === 'intake') return sub.stage === 'data_collection' || sub.stage === 'submission';
-    if (state.currentRole === 'assignment') return sub.stage === 'risk_assessment';
-    if (state.currentRole === 'underwriting') return ['pricing', 'quotation', 'binding'].includes(sub.stage);
+    if (state.currentRole === 'assignment') return sub.stage === 'assignment';
+    if (state.currentRole === 'underwriting') return ['risk_assessment', 'pricing', 'quotation', 'binding'].includes(sub.stage);
     return false;
   };
 
@@ -402,8 +402,8 @@ export function WorkbenchPage() {
 
   const canEdit = (sub: Submission): boolean => {
     if (state.currentRole === 'intake') return sub.stage === 'data_collection' || sub.stage === 'submission';
-    if (state.currentRole === 'assignment') return sub.stage === 'risk_assessment';
-    if (state.currentRole === 'underwriting') return ['pricing', 'quotation'].includes(sub.stage);
+    if (state.currentRole === 'assignment') return sub.stage === 'assignment';
+    if (state.currentRole === 'underwriting') return ['risk_assessment', 'pricing', 'quotation'].includes(sub.stage);
     return false;
   };
 
@@ -665,7 +665,7 @@ export function WorkbenchPage() {
             />
           )}
 
-          {['pricing', 'quotation'].includes(selectedSubmission.stage) && state.currentRole === 'underwriting' && (
+{['risk_assessment', 'pricing', 'quotation'].includes(selectedSubmission.stage) && state.currentRole === 'underwriting' && (
             <UnderwritingSubstages
               submission={selectedSubmission}
               currentSubstage={selectedSubmission.substage as UnderwritingSubstage}
@@ -695,8 +695,8 @@ export function WorkbenchPage() {
             )
           )}
 
-          {/* Underwriting user viewing cases not in their stages */}
-          {state.currentRole === 'underwriting' && !['pricing', 'quotation', 'binding'].includes(selectedSubmission.stage) && (
+{/* Underwriting user viewing cases not in their stages */}
+          {state.currentRole === 'underwriting' && !['risk_assessment', 'pricing', 'quotation', 'binding'].includes(selectedSubmission.stage) && (
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center text-muted-foreground">
