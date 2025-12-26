@@ -60,7 +60,7 @@ export function InboxPage() {
       scenarioId = 'scenario-c';
     }
 
-    const producer = producers.find(p => p.email === email.from) || producers[0];
+    const producer = producers.find(p => p.email.value === email.from) || producers[0];
     
     // Calculate overall confidence based on key fields
     const keyConfidences = [

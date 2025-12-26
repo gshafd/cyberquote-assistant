@@ -95,17 +95,17 @@ export function SubmissionsList() {
   };
 
   // Get unique producers for filter
-  const uniqueProducers = Array.from(new Set(submissions.map(s => s.producer.agency)));
+  const uniqueProducers = Array.from(new Set(submissions.map(s => s.producer.agency.value)));
 
   // Apply filters
   const filteredSubmissions = submissions.filter(submission => {
     const matchesSearch = searchQuery === '' || 
       submission.insured.name.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      submission.producer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      submission.producer.agency.toLowerCase().includes(searchQuery.toLowerCase());
+      submission.producer.name.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      submission.producer.agency.value.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStage = stageFilter === 'all' || submission.stage === stageFilter;
-    const matchesProducer = producerFilter === 'all' || submission.producer.agency === producerFilter;
+    const matchesProducer = producerFilter === 'all' || submission.producer.agency.value === producerFilter;
     
     return matchesSearch && matchesStage && matchesProducer;
   });
@@ -152,8 +152,8 @@ export function SubmissionsList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Producers</SelectItem>
-                {uniqueProducers.map((producer) => (
-                  <SelectItem key={producer} value={producer}>{producer}</SelectItem>
+                {uniqueProducers.map((producer, idx) => (
+                  <SelectItem key={`${producer}-${idx}`} value={producer}>{producer}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -200,8 +200,8 @@ export function SubmissionsList() {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="text-sm text-foreground">{submission.producer.name}</p>
-                      <p className="text-xs text-muted-foreground">{submission.producer.agency}</p>
+                      <p className="text-sm text-foreground">{submission.producer.name.value}</p>
+                      <p className="text-xs text-muted-foreground">{submission.producer.agency.value}</p>
                     </div>
                   </TableCell>
                   <TableCell className="text-sm text-foreground">
