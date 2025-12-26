@@ -39,16 +39,69 @@ type Action =
   | { type: 'UPDATE_METRICS'; payload: Partial<WorkbenchMetrics> }
   | { type: 'ADVANCE_STAGE'; payload: { submissionId: string; newStage: SubmissionStage; substage: string } };
 
-const initialState: AppState = {
-  currentRole: 'intake',
-  emails: brokerEmails,
-  submissions: initialSubmissions,
-  selectedSubmissionId: null,
-  feedbackLog: initialFeedbackLog,
-  metrics: workbenchMetrics,
-  knowledgeBases,
-  underwriters,
+// Safe initial state with fallback values
+const getInitialState = (): AppState => {
+  try {
+    return {
+      currentRole: 'intake',
+      emails: brokerEmails || [],
+      submissions: initialSubmissions || [],
+      selectedSubmissionId: null,
+      feedbackLog: initialFeedbackLog || [],
+      metrics: workbenchMetrics,
+      knowledgeBases: knowledgeBases || [],
+      underwriters: underwriters || [],
+    };
+  } catch (error) {
+    console.error('Error initializing app state:', error);
+    return {
+      currentRole: 'intake',
+      emails: [],
+      submissions: [],
+      selectedSubmissionId: null,
+      feedbackLog: [],
+      metrics: {
+        dailyRuns: 0,
+        monthlyRuns: 0,
+        tokenUsage: 0,
+        submissionsByStage: {
+          submission: 0,
+          data_collection: 0,
+          assignment: 0,
+          risk_assessment: 0,
+          pricing: 0,
+          quotation: 0,
+          binding: 0,
+        },
+        avgConfidenceByStage: {
+          submission: 0,
+          data_collection: 0,
+          assignment: 0,
+          risk_assessment: 0,
+          pricing: 0,
+          quotation: 0,
+          binding: 0,
+        },
+        commonOverrideReasons: [],
+        avgTimeInStage: {
+          submission: 0,
+          data_collection: 0,
+          assignment: 0,
+          risk_assessment: 0,
+          pricing: 0,
+          quotation: 0,
+          binding: 0,
+        },
+        bindRatio: 0,
+        declineRatio: 0,
+      },
+      knowledgeBases: [],
+      underwriters: [],
+    };
+  }
 };
+
+const initialState: AppState = getInitialState();
 
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
