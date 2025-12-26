@@ -47,7 +47,21 @@ export function UnderwritingSubstages({
   onFieldEdit,
   onAdvanceSubstage,
 }: UnderwritingSubstagesProps) {
-  const currentIdx = substageOrder.indexOf(currentSubstage);
+  // Map the current substage to display index
+  // For pricing stage submissions, they've completed risk_assessment so those substages should show as complete
+  const getDisplayIndex = (): number => {
+    // If substage is in the order, use it directly
+    const directIdx = substageOrder.indexOf(currentSubstage);
+    if (directIdx >= 0) return directIdx;
+    
+    // Map pricing stage substages to the appropriate position
+    // 'pricing' substage in pricing stage = coverage_determination complete, showing pricing
+    if (currentSubstage === 'pricing') return 3;
+    
+    return 0;
+  };
+  
+  const currentIdx = getDisplayIndex();
 
   return (
     <div className="space-y-4">
