@@ -48,15 +48,11 @@ export function UnderwritingSubstages({
   onAdvanceSubstage,
 }: UnderwritingSubstagesProps) {
   // Map the current substage to display index
-  // For pricing stage submissions, they've completed risk_assessment so those substages should show as complete
+  // The substage order is: risk_profiling(0), rules_check(1), coverage_determination(2), pricing(3), quote_draft(4), quote_review(5), binding(6)
   const getDisplayIndex = (): number => {
     // If substage is in the order, use it directly
     const directIdx = substageOrder.indexOf(currentSubstage);
     if (directIdx >= 0) return directIdx;
-    
-    // Map pricing stage substages to the appropriate position
-    // 'pricing' substage in pricing stage = coverage_determination complete, showing pricing
-    if (currentSubstage === 'pricing') return 3;
     
     return 0;
   };

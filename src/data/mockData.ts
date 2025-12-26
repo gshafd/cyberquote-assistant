@@ -412,6 +412,93 @@ export const edgecaseRiskProfile: RiskProfile = {
   ],
 };
 
+// EdgeCase coverage recommendations
+export const edgecaseCoverages: CoverageRecommendation[] = [
+  {
+    coverageType: 'Network Security & Privacy Liability',
+    recommendedLimit: 15000000,
+    recommendedDeductible: 100000,
+    sublimits: { ransomware: 7500000, aggregationLiability: 5000000 },
+    exclusions: ['Third-party software vulnerabilities beyond vendor control', 'Client-caused security incidents'],
+    conditions: ['Privileged access review completion within 30 days', 'Annual penetration testing required'],
+    confidence: 75,
+    rationale: 'Higher limit required due to aggregation exposure across 200+ enterprise clients. Sublimits applied for vendor-specific risks.',
+  },
+  {
+    coverageType: 'Business Interruption',
+    recommendedLimit: 7500000,
+    recommendedDeductible: 75000,
+    sublimits: { waitingPeriod: 12, contingentBI: 2500000 },
+    confidence: 72,
+    rationale: 'Extended BI limits due to service-based revenue model. Contingent BI sublimit for client dependency scenarios.',
+  },
+  {
+    coverageType: 'Regulatory Defense & Penalties',
+    recommendedLimit: 5000000,
+    recommendedDeductible: 50000,
+    conditions: ['Maintain SOC2 Type II certification'],
+    confidence: 80,
+    rationale: 'Multi-regulatory exposure (HIPAA, PCI, SOX) from diverse client base requires enhanced regulatory coverage.',
+  },
+  {
+    coverageType: 'Social Engineering',
+    recommendedLimit: 750000,
+    recommendedDeductible: 25000,
+    confidence: 78,
+    rationale: 'Standard sublimit with enhanced scrutiny due to high-value client relationships and fund transfer exposure.',
+  },
+];
+
+// EdgeCase pricing details
+export const edgecasePricing: PricingDetails = {
+  basePremium: createAIField(82500, 80, 'Base premium for vendor risk services at $15M limit', 'Rate_Model_v3.json', 'Vendor risk base rate: $1.10 per $1000 revenue'),
+  riskLoadings: [
+    { reason: 'Prior claims history ($450K)', amount: 16500, percentage: 20 },
+    { reason: 'Aggregation exposure (200+ enterprise clients)', amount: 12375, percentage: 15 },
+    { reason: 'Multi-regulatory data exposure (PHI, PCI)', amount: 8250, percentage: 10 },
+    { reason: 'Privileged access review overdue', amount: 4125, percentage: 5 },
+  ],
+  credits: [
+    { reason: 'SOC2 Type II certified', amount: -8250, percentage: -10 },
+    { reason: 'EDR deployed (SentinelOne)', amount: -4125, percentage: -5 },
+    { reason: 'Strong vendor risk management program', amount: -4125, percentage: -5 },
+  ],
+  finalPremium: createAIField(107250, 75, 'Final premium after loadings and credits - requires manual review', 'Rate_Model_v3.json', 'Net premium with risk adjustments'),
+  minimumPremium: 75000,
+  ratePerMillion: createAIField(7150, 78, 'Rate per million reflects elevated risk profile', 'Rate_Model_v3.json', '$7,150 per $1M limit'),
+  taxesAndFees: 5363,
+  totalCost: createAIField(112613, 75, 'Total including taxes and fees - pending senior UW approval', 'Rate_Model_v3.json', 'Total cost calculation'),
+};
+
+// EdgeCase quote
+export const edgecaseQuote: Quote = {
+  quoteNumber: 'CYB-2024-EDGE-001',
+  effectiveDate: '2025-03-01',
+  expirationDate: '2026-03-01',
+  coverages: edgecaseCoverages,
+  pricing: edgecasePricing,
+  terms: [
+    'Policy period: 12 months',
+    'Claims-made coverage form',
+    'Retroactive date: 2022-01-01 (post prior claim)',
+    'Extended reporting period: 90 days',
+  ],
+  conditions: [
+    'Senior underwriter approval required',
+    'Privileged access review completion within 30 days of binding',
+    'Annual penetration testing with report provided',
+    'Prior claims history acknowledged - no coverage for related circumstances',
+  ],
+  exclusions: [
+    'Acts of war or terrorism',
+    'Prior known circumstances related to 2022 incident',
+    'Intentional acts',
+    'Third-party vendor software vulnerabilities',
+    'Aggregation scenarios exceeding sublimit',
+  ],
+  status: 'pending_review',
+};
+
 // Coverage recommendations
 export const acmeCoverages: CoverageRecommendation[] = [
   {
@@ -812,12 +899,14 @@ export const initialSubmissions: Submission[] = [
     id: 'sub-edgecase-001',
     scenarioId: 'scenario-c',
     stage: 'risk_assessment',
-    substage: 'risk_profiling',
+    substage: 'pricing',
     sourceEmail: brokerEmails[2],
     producer: producers[2],
     insured: edgecaseInsured,
     controls: edgecaseControls,
     riskProfile: edgecaseRiskProfile,
+    coverages: edgecaseCoverages,
+    quote: edgecaseQuote,
     assignedUnderwriter: underwriters[3],
     createdAt: '2024-12-21T14:45:00Z',
     updatedAt: '2024-12-22T16:00:00Z',
