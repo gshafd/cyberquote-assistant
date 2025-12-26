@@ -12,6 +12,7 @@ import { AssignmentSubstages } from '@/components/substages/AssignmentSubstages'
 import { AssignmentSummaryReadOnly } from '@/components/substages/AssignmentSummaryReadOnly';
 import { UnderwritingSubstages } from '@/components/substages/UnderwritingSubstages';
 import { toast } from 'sonner';
+import { format, formatDistanceToNow } from 'date-fns';
 import { 
   FileCheck,
   ArrowRight,
@@ -19,6 +20,7 @@ import {
   CheckCircle,
   Zap,
   Clock,
+  Calendar,
 } from 'lucide-react';
 import { 
   Submission, 
@@ -383,7 +385,10 @@ export function WorkbenchPage() {
   }, [state.submissions]);
 
   // All roles can see all submissions - they just have different editing capabilities
-  const roleSubmissions = state.submissions;
+  // Sort by newest first (most recently created/updated)
+  const roleSubmissions = [...state.submissions].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
   const selectedSubmission = state.submissions.find(s => s.id === state.selectedSubmissionId);
 
@@ -566,10 +571,23 @@ export function WorkbenchPage() {
                     state.selectedSubmissionId === sub.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''
                   }`}
                 >
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start justify-between mb-1">
                     <span className="font-medium text-sm">{sub.insured.name.value}</span>
                     <ConfidenceBadge score={sub.confidence} size="sm" />
                   </div>
+                  
+                  {/* Ingestion datetime */}
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                    <Calendar size={10} />
+                    <span title={format(new Date(sub.createdAt), 'MMM dd, yyyy HH:mm')}>
+                      {formatDistanceToNow(new Date(sub.createdAt), { addSuffix: true })}
+                    </span>
+                    <span className="text-muted-foreground/50">•</span>
+                    <span className="text-muted-foreground/70">
+                      {format(new Date(sub.createdAt), 'MMM dd, HH:mm')}
+                    </span>
+                  </div>
+                  
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Badge variant="outline" className="text-xs capitalize">
                       {sub.stage.replace(/_/g, ' ')}

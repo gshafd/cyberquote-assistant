@@ -48,9 +48,9 @@ Key details:
 - Annual Revenue: $45M
 - Employees: 280
 - Requesting $5M limit with $50K retention
-- Current policy expires 02/15/2025
+- Current policy expires 02/15/2026
 
-They have SOC2 Type II (expires March 2025) but I'm still waiting for confirmation on their EDR solution. Their IT team mentioned they're "in the process" of implementing one.
+They have SOC2 Type II (expires March 2026) but I'm still waiting for confirmation on their EDR solution. Their IT team mentioned they're "in the process" of implementing one.
 
 Please expedite if possible - the client is eager to get coverage in place.
 
@@ -59,7 +59,7 @@ Sarah Thompson
 Senior Broker | BrokerWorks Insurance
 sarah.thompson@brokerworks.com
 (555) 234-5678`,
-    receivedAt: '2024-12-22T09:15:00Z',
+    receivedAt: '2025-12-26T09:15:00Z',
     attachments: [
       { id: 'att-001', filename: 'ACORD_Application_ACME.json', type: 'acord', size: '45 KB' },
       { id: 'att-002', filename: 'Controls_Questionnaire_ACME.json', type: 'questionnaire', size: '28 KB' },
@@ -81,7 +81,7 @@ Highlights:
 - Revenue grown to $120M (up from $85M)
 - 450 employees
 - Excellent controls: MFA everywhere, 24/7 SOC, EDR deployed
-- SOC2 Type II current through September 2025
+- SOC2 Type II current through September 2026
 - Zero claims history with us
 
 This should be a straightforward renewal. Let me know if you need anything else.
@@ -90,7 +90,7 @@ Thanks,
 Mike Chen
 Vice President | Premier Brokerage
 mike.chen@premierbrokerage.com`,
-    receivedAt: '2024-12-22T10:30:00Z',
+    receivedAt: '2025-12-23T10:30:00Z',
     attachments: [
       { id: 'att-004', filename: 'ACORD_Application_Zenith.json', type: 'acord', size: '52 KB' },
       { id: 'att-005', filename: 'Security_Controls_Zenith.json', type: 'questionnaire', size: '35 KB' },
@@ -123,7 +123,7 @@ Jennifer Walsh
 Managing Director | Global Risk Management
 jennifer.walsh@globalriskmgmt.com
 (555) 789-0123`,
-    receivedAt: '2024-12-22T14:45:00Z',
+    receivedAt: '2025-12-24T14:45:00Z',
     attachments: [
       { id: 'att-008', filename: 'ACORD_EdgeCase.json', type: 'acord', size: '48 KB' },
       { id: 'att-009', filename: 'Controls_Assessment_EdgeCase.json', type: 'questionnaire', size: '42 KB' },
@@ -244,8 +244,8 @@ export const acmeControls: CyberControls = {
   hasEDR: createAIField(false, 45, 'EDR status unclear - broker mentioned "in process" of implementation', 'Controls_Questionnaire_ACME.json', '"edrDeployed": "pending"'),
   hasBackups: createAIField(true, 88, 'Daily backups confirmed', 'Controls_Questionnaire_ACME.json', '"backupPolicy": "daily"'),
   backupFrequency: createAIField('Daily', 88, 'Backup frequency from questionnaire', 'Controls_Questionnaire_ACME.json', '"backupFrequency": "daily"'),
-  hasSOC2: createAIField(true, 95, 'SOC2 Type II report attached, valid through March 2025', 'SOC2_Report_ACME.pdf', 'Report Period: April 2024 - March 2025'),
-  soc2ExpiryDate: createAIField('2025-03-31', 95, 'SOC2 expiration from report', 'SOC2_Report_ACME.pdf', 'Valid Through: March 31, 2025'),
+  hasSOC2: createAIField(true, 95, 'SOC2 Type II report attached, valid through March 2026', 'SOC2_Report_ACME.pdf', 'Report Period: April 2025 - March 2026'),
+  soc2ExpiryDate: createAIField('2026-03-31', 95, 'SOC2 expiration from report', 'SOC2_Report_ACME.pdf', 'Valid Through: March 31, 2026'),
   hasIncidentResponsePlan: createAIField(true, 82, 'IR plan mentioned but not attached', 'Controls_Questionnaire_ACME.json', '"incidentResponsePlan": true'),
   hasSecurityTraining: createAIField(true, 78, 'Annual security training indicated', 'Controls_Questionnaire_ACME.json', '"securityTraining": "annual"'),
   trainingFrequency: createAIField('Annual', 78, 'Training frequency from questionnaire', 'Controls_Questionnaire_ACME.json', '"trainingFrequency": "annual"'),
@@ -264,7 +264,7 @@ export const acmeThreatSignals: ThreatSignal[] = [
     severity: 'high',
     finding: 'Open RDP port detected',
     details: 'Port 3389 (RDP) found open on IP 203.0.113.45 associated with acmemedical.com',
-    dateFound: '2024-12-20',
+    dateFound: '2025-12-24',
     isResolved: false,
   },
   {
@@ -272,7 +272,7 @@ export const acmeThreatSignals: ThreatSignal[] = [
     severity: 'medium',
     finding: 'Potentially misconfigured S3 bucket',
     details: 'S3 bucket "acme-patient-data-backup" may have overly permissive ACLs',
-    dateFound: '2024-12-19',
+    dateFound: '2025-12-23',
     isResolved: false,
   },
   {
@@ -280,7 +280,7 @@ export const acmeThreatSignals: ThreatSignal[] = [
     severity: 'low',
     finding: 'Domain mentioned in credential dump',
     details: '3 email addresses with @acmemedical.com found in recent credential dump',
-    dateFound: '2024-12-15',
+    dateFound: '2025-12-20',
     isResolved: false,
   },
 ];
@@ -322,8 +322,8 @@ export const zenithControls: CyberControls = {
   hasEDR: createAIField(true, 99, 'CrowdStrike Falcon deployed on all endpoints', 'EDR_Deployment_Report.pdf', 'CrowdStrike Falcon - 100% endpoint coverage'),
   hasBackups: createAIField(true, 96, 'Hourly backups with geo-redundant storage', 'Security_Controls_Zenith.json', '"backupPolicy": "hourly", "geoRedundant": true'),
   backupFrequency: createAIField('Hourly', 96, 'Backup frequency confirmed', 'Security_Controls_Zenith.json', '"backupFrequency": "hourly"'),
-  hasSOC2: createAIField(true, 99, 'SOC2 Type II current through September 2025', 'SOC2_TypeII_Zenith.pdf', 'Report Period: October 2024 - September 2025'),
-  soc2ExpiryDate: createAIField('2025-09-30', 99, 'SOC2 expiration date', 'SOC2_TypeII_Zenith.pdf', 'Valid Through: September 30, 2025'),
+  hasSOC2: createAIField(true, 99, 'SOC2 Type II current through September 2026', 'SOC2_TypeII_Zenith.pdf', 'Report Period: October 2025 - September 2026'),
+  soc2ExpiryDate: createAIField('2026-09-30', 99, 'SOC2 expiration date', 'SOC2_TypeII_Zenith.pdf', 'Valid Through: September 30, 2026'),
   hasIncidentResponsePlan: createAIField(true, 95, 'Comprehensive IR plan with annual tabletop exercises', 'Security_Controls_Zenith.json', '"irPlan": true, "tabletopExercises": "annual"'),
   hasSecurityTraining: createAIField(true, 94, 'Quarterly security awareness training with phishing simulations', 'Security_Controls_Zenith.json', '"securityTraining": "quarterly", "phishingTests": true'),
   trainingFrequency: createAIField('Quarterly', 94, 'Training frequency', 'Security_Controls_Zenith.json', '"trainingFrequency": "quarterly"'),
@@ -373,7 +373,7 @@ export const edgecaseControls: CyberControls = {
   hasBackups: createAIField(true, 88, 'Daily backups', 'Controls_Assessment_EdgeCase.json', '"backupPolicy": "daily"'),
   backupFrequency: createAIField('Daily', 88, 'Backup frequency', 'Controls_Assessment_EdgeCase.json', '"backupFrequency": "daily"'),
   hasSOC2: createAIField(true, 92, 'SOC2 Type II current', 'Controls_Assessment_EdgeCase.json', '"soc2": true'),
-  soc2ExpiryDate: createAIField('2025-06-30', 92, 'SOC2 expiration', 'Controls_Assessment_EdgeCase.json', '"soc2Expiry": "2025-06-30"'),
+  soc2ExpiryDate: createAIField('2026-06-30', 92, 'SOC2 expiration', 'Controls_Assessment_EdgeCase.json', '"soc2Expiry": "2026-06-30"'),
   hasIncidentResponsePlan: createAIField(true, 80, 'IR plan exists', 'Controls_Assessment_EdgeCase.json', '"irPlan": true'),
   hasSecurityTraining: createAIField(true, 82, 'Annual training', 'Controls_Assessment_EdgeCase.json', '"securityTraining": "annual"'),
   trainingFrequency: createAIField('Annual', 82, 'Training frequency', 'Controls_Assessment_EdgeCase.json', '"trainingFrequency": "annual"'),
@@ -392,7 +392,7 @@ export const edgecaseThreatSignals: ThreatSignal[] = [
     severity: 'medium',
     finding: 'Privileged access review overdue',
     details: 'Quarterly privileged access review not completed for 2 quarters',
-    dateFound: '2024-12-18',
+    dateFound: '2025-12-22',
     isResolved: false,
   },
 ];
@@ -472,9 +472,9 @@ export const edgecasePricing: PricingDetails = {
 
 // EdgeCase quote
 export const edgecaseQuote: Quote = {
-  quoteNumber: 'CYB-2024-EDGE-001',
-  effectiveDate: '2025-03-01',
-  expirationDate: '2026-03-01',
+  quoteNumber: 'CYB-2025-EDGE-001',
+  effectiveDate: '2026-03-01',
+  expirationDate: '2027-03-01',
   coverages: edgecaseCoverages,
   pricing: edgecasePricing,
   terms: [
@@ -600,9 +600,9 @@ export const zenithPricing: PricingDetails = {
 
 // Quotes
 export const acmeQuote: Quote = {
-  quoteNumber: 'CYB-2024-ACME-001',
-  effectiveDate: '2025-02-15',
-  expirationDate: '2026-02-15',
+  quoteNumber: 'CYB-2025-ACME-001',
+  effectiveDate: '2026-02-15',
+  expirationDate: '2027-02-15',
   coverages: acmeCoverages,
   pricing: acmePricing,
   terms: [
@@ -625,9 +625,9 @@ export const acmeQuote: Quote = {
 };
 
 export const zenithQuote: Quote = {
-  quoteNumber: 'CYB-2024-ZEN-001',
-  effectiveDate: '2025-01-15',
-  expirationDate: '2026-01-15',
+  quoteNumber: 'CYB-2025-ZEN-001',
+  effectiveDate: '2026-01-15',
+  expirationDate: '2027-01-15',
   coverages: zenithCoverages,
   pricing: zenithPricing,
   terms: [
@@ -753,7 +753,7 @@ export const initialFeedbackLog: FeedbackEntry[] = [
   {
     id: 'fb-001',
     submissionId: 'sub-acme-001',
-    editedAt: '2024-12-21T14:23:00Z',
+    editedAt: '2025-12-25T14:23:00Z',
     editedBy: 'John Smith',
     fieldPath: 'controls.hasEDR',
     fieldLabel: 'EDR Deployed',
@@ -768,7 +768,7 @@ export const initialFeedbackLog: FeedbackEntry[] = [
   {
     id: 'fb-002',
     submissionId: 'sub-zenith-001',
-    editedAt: '2024-12-20T09:45:00Z',
+    editedAt: '2025-12-24T09:45:00Z',
     editedBy: 'Lisa Park',
     fieldPath: 'insured.annualRevenue',
     fieldLabel: 'Annual Revenue',
@@ -783,7 +783,7 @@ export const initialFeedbackLog: FeedbackEntry[] = [
   {
     id: 'fb-003',
     submissionId: 'sub-edgecase-001',
-    editedAt: '2024-12-19T16:30:00Z',
+    editedAt: '2025-12-23T16:30:00Z',
     editedBy: 'Amanda Foster',
     fieldPath: 'insured.industry',
     fieldLabel: 'Industry',
@@ -798,7 +798,7 @@ export const initialFeedbackLog: FeedbackEntry[] = [
   {
     id: 'fb-004',
     submissionId: 'sub-acme-001',
-    editedAt: '2024-12-18T11:15:00Z',
+    editedAt: '2025-12-22T11:15:00Z',
     editedBy: 'Sarah Johnson',
     fieldPath: 'insured.employeeCount',
     fieldLabel: 'Employee Count',
@@ -813,7 +813,7 @@ export const initialFeedbackLog: FeedbackEntry[] = [
   {
     id: 'fb-005',
     submissionId: 'sub-zenith-001',
-    editedAt: '2024-12-17T10:00:00Z',
+    editedAt: '2025-12-21T10:00:00Z',
     editedBy: 'Mike Rodriguez',
     fieldPath: 'assignedUW',
     fieldLabel: 'Assigned Underwriter',
@@ -841,12 +841,12 @@ export const initialSubmissions: Submission[] = [
     riskProfile: acmeRiskProfile,
     coverages: acmeCoverages,
     quote: acmeQuote,
-    createdAt: '2024-12-22T09:15:00Z',
-    updatedAt: '2024-12-22T14:30:00Z',
+    createdAt: '2025-12-26T09:15:00Z',
+    updatedAt: '2025-12-26T14:30:00Z',
     history: [
       {
         id: 'event-001',
-        timestamp: '2024-12-22T09:15:00Z',
+        timestamp: '2025-12-26T09:15:00Z',
         type: 'stage_change',
         actor: 'System',
         actorRole: 'intake',
@@ -871,12 +871,12 @@ export const initialSubmissions: Submission[] = [
     coverages: zenithCoverages,
     quote: zenithQuote,
     assignedUnderwriter: underwriters[1],
-    createdAt: '2024-12-20T10:30:00Z',
-    updatedAt: '2024-12-22T11:00:00Z',
+    createdAt: '2025-12-23T10:30:00Z',
+    updatedAt: '2025-12-25T11:00:00Z',
     history: [
       {
         id: 'event-002',
-        timestamp: '2024-12-20T10:30:00Z',
+        timestamp: '2025-12-23T10:30:00Z',
         type: 'stage_change',
         actor: 'System',
         actorRole: 'intake',
@@ -884,7 +884,7 @@ export const initialSubmissions: Submission[] = [
       },
       {
         id: 'event-003',
-        timestamp: '2024-12-21T09:00:00Z',
+        timestamp: '2025-12-24T09:00:00Z',
         type: 'assignment',
         actor: 'System (Auto-assign)',
         actorRole: 'assignment',
@@ -908,12 +908,12 @@ export const initialSubmissions: Submission[] = [
     coverages: edgecaseCoverages,
     quote: edgecaseQuote,
     assignedUnderwriter: underwriters[3],
-    createdAt: '2024-12-21T14:45:00Z',
-    updatedAt: '2024-12-22T16:00:00Z',
+    createdAt: '2025-12-24T14:45:00Z',
+    updatedAt: '2025-12-26T16:00:00Z',
     history: [
       {
         id: 'event-004',
-        timestamp: '2024-12-21T14:45:00Z',
+        timestamp: '2025-12-24T14:45:00Z',
         type: 'stage_change',
         actor: 'System',
         actorRole: 'intake',
@@ -945,12 +945,12 @@ export const initialSubmissions: Submission[] = [
     coverages: zenithCoverages,
     quote: {
       ...zenithQuote,
-      quoteNumber: 'CYB-2024-TG-001',
+      quoteNumber: 'CYB-2025-TG-001',
       status: 'pending_review',
     },
     assignedUnderwriter: underwriters[0],
-    createdAt: '2024-12-18T08:00:00Z',
-    updatedAt: '2024-12-22T09:00:00Z',
+    createdAt: '2025-12-20T08:00:00Z',
+    updatedAt: '2025-12-25T09:00:00Z',
     history: [],
     feedbackLog: [],
     confidence: 88,
@@ -976,12 +976,12 @@ export const initialSubmissions: Submission[] = [
     coverages: acmeCoverages,
     quote: {
       ...acmeQuote,
-      quoteNumber: 'CYB-2024-HN-001',
+      quoteNumber: 'CYB-2025-HN-001',
       status: 'approved',
     },
     assignedUnderwriter: underwriters[0],
-    createdAt: '2024-12-15T10:00:00Z',
-    updatedAt: '2024-12-22T14:00:00Z',
+    createdAt: '2025-12-15T10:00:00Z',
+    updatedAt: '2025-12-24T14:00:00Z',
     history: [],
     feedbackLog: [],
     confidence: 91,
@@ -1003,8 +1003,8 @@ export const initialSubmissions: Submission[] = [
       state: createAIField('WA', 98, 'State', 'ACORD.json', '"state": "WA"'),
     },
     controls: acmeControls,
-    createdAt: '2024-12-22T16:00:00Z',
-    updatedAt: '2024-12-22T16:00:00Z',
+    createdAt: '2025-12-26T16:00:00Z',
+    updatedAt: '2025-12-26T16:00:00Z',
     history: [],
     feedbackLog: [],
     confidence: 65,
@@ -1028,12 +1028,12 @@ export const initialSubmissions: Submission[] = [
     },
     controls: zenithControls,
     riskProfile: zenithRiskProfile,
-    createdAt: '2024-12-22T11:00:00Z',
-    updatedAt: '2024-12-22T15:00:00Z',
+    createdAt: '2025-12-25T11:00:00Z',
+    updatedAt: '2025-12-26T15:00:00Z',
     history: [
       {
         id: 'event-010',
-        timestamp: '2024-12-22T11:00:00Z',
+        timestamp: '2025-12-25T11:00:00Z',
         type: 'stage_change',
         actor: 'System',
         actorRole: 'intake',
@@ -1041,7 +1041,7 @@ export const initialSubmissions: Submission[] = [
       },
       {
         id: 'event-011',
-        timestamp: '2024-12-22T15:00:00Z',
+        timestamp: '2025-12-26T15:00:00Z',
         type: 'stage_change',
         actor: 'System (Auto-advance)',
         actorRole: 'intake',
@@ -1069,12 +1069,12 @@ export const initialSubmissions: Submission[] = [
     },
     controls: zenithControls,
     riskProfile: acmeRiskProfile,
-    createdAt: '2024-12-21T09:00:00Z',
-    updatedAt: '2024-12-22T14:00:00Z',
+    createdAt: '2025-12-22T09:00:00Z',
+    updatedAt: '2025-12-25T14:00:00Z',
     history: [
       {
         id: 'event-012',
-        timestamp: '2024-12-21T09:00:00Z',
+        timestamp: '2025-12-22T09:00:00Z',
         type: 'stage_change',
         actor: 'System',
         actorRole: 'intake',
