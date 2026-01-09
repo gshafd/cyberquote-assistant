@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 import { AppProvider, useAppState } from "@/context/AppContext";
 import Index from "@/pages/Index";
-import { InboxPage } from "@/pages/InboxPage";
+import { SubmissionQueuePage } from "@/pages/SubmissionQueuePage";
 import { WorkbenchPage } from "@/pages/WorkbenchPage";
 import { OpsConsolePage } from "@/pages/OpsConsolePage";
 import { Button } from "@/components/ui/button";
@@ -56,14 +56,14 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                 </Button>
               )}
             </NavLink>
-            <NavLink to="/inbox">
+            <NavLink to="/queue">
               {({ isActive }) => (
                 <Button variant={isActive ? "secondary" : "ghost"} size="sm" className="gap-2">
                   <Mail size={16} />
-                  Inbox
-                  {state.emails.filter(e => !e.isRead).length > 0 && (
+                  Submission Queue
+                  {state.emails.filter(e => !e.isRead && !e.isIngested).length > 0 && (
                     <Badge className="h-5 w-5 p-0 justify-center bg-primary">
-                      {state.emails.filter(e => !e.isRead).length}
+                      {state.emails.filter(e => !e.isRead && !e.isIngested).length}
                     </Badge>
                   )}
                 </Button>
@@ -120,7 +120,7 @@ function AppContent() {
       <MainLayout>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/queue" element={<SubmissionQueuePage />} />
           <Route path="/workbench" element={<WorkbenchPage />} />
           <Route path="/ops" element={<OpsConsolePage />} />
         </Routes>
