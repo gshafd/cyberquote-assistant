@@ -224,9 +224,17 @@ export function SubmissionQueuePage() {
     setSelectedEDI(null);
   };
 
-  const unreadEmailCount = state.emails.filter(e => !e.isRead && !e.isIngested).length;
+  const pendingEmailCount = state.emails.filter(e => !e.isIngested).length;
   const pendingPortalCount = portalSubmissions.filter(p => !p.isIngested).length;
   const pendingEDICount = ediSubmissions.filter(e => !e.isIngested).length;
+  
+  const ingestedEmailCount = state.emails.filter(e => e.isIngested).length;
+  const ingestedPortalCount = portalSubmissions.filter(p => p.isIngested).length;
+  const ingestedEDICount = ediSubmissions.filter(e => e.isIngested).length;
+  
+  const totalPending = pendingEmailCount + pendingPortalCount + pendingEDICount;
+  const totalIngested = ingestedEmailCount + ingestedPortalCount + ingestedEDICount;
+  const totalSubmissions = totalPending + totalIngested;
 
   const getConfidenceColor = (score: number) => {
     if (score >= 90) return 'text-success';
@@ -241,21 +249,84 @@ export function SubmissionQueuePage() {
           <h1 className="text-2xl font-bold">Submission Queue</h1>
           <p className="text-muted-foreground">Incoming submissions from all channels</p>
         </div>
-        <div className="flex items-center gap-4">
-          <Badge variant="outline" className="gap-2 px-3 py-1.5">
-            <Mail size={14} />
-            {unreadEmailCount} Email
-          </Badge>
-          <Badge variant="outline" className="gap-2 px-3 py-1.5">
-            <Globe size={14} />
-            {pendingPortalCount} Portal
-          </Badge>
-          <Badge variant="outline" className="gap-2 px-3 py-1.5">
-            <Zap size={14} />
-            {pendingEDICount} EDI/API
-          </Badge>
-        </div>
       </div>
+
+      {/* Summary Section */}
+      <Card className="bg-gradient-to-r from-card to-muted/30">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-6 gap-4">
+            {/* Channel Breakdown */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Mail size={20} className="text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{pendingEmailCount}</p>
+                  <p className="text-xs text-muted-foreground">pending</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Portal</h3>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-blue-500/10">
+                  <Globe size={20} className="text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{pendingPortalCount}</p>
+                  <p className="text-xs text-muted-foreground">pending</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground">EDI/API</h3>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-amber-500/10">
+                  <Zap size={20} className="text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{pendingEDICount}</p>
+                  <p className="text-xs text-muted-foreground">pending</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-l border-border" />
+            
+            {/* Totals */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Yet to Ingest</h3>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-warning/10">
+                  <Clock size={20} className="text-warning" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-warning">{totalPending}</p>
+                  <p className="text-xs text-muted-foreground">submissions</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Ingested</h3>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-success/10">
+                  <CheckCircle size={20} className="text-success" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-success">{totalIngested}</p>
+                  <p className="text-xs text-muted-foreground">submissions</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Email Inbox Section */}
       <Collapsible open={emailSectionOpen} onOpenChange={setEmailSectionOpen}>
@@ -267,8 +338,8 @@ export function SubmissionQueuePage() {
                   {emailSectionOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                   <Mail size={20} className="text-primary" />
                   Email Inbox
-                  {unreadEmailCount > 0 && (
-                    <Badge className="bg-primary ml-2">Unread: {unreadEmailCount}</Badge>
+                  {state.emails.filter(e => !e.isRead && !e.isIngested).length > 0 && (
+                    <Badge className="bg-primary ml-2">Unread: {state.emails.filter(e => !e.isRead && !e.isIngested).length}</Badge>
                   )}
                 </CardTitle>
                 <Badge variant="secondary">{state.emails.filter(e => !e.isIngested).length} pending</Badge>
