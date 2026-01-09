@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Eye, AlertTriangle, Edit, MoreHorizontal, Search, Filter, Sparkles } from 'lucide-react';
+import { Eye, AlertTriangle, Edit, MoreHorizontal, Search, Filter, Sparkles, Mail, Globe, FileCode } from 'lucide-react';
 import { SubmissionStage } from '@/types/underwriting';
 import { format } from 'date-fns';
 import {
@@ -48,6 +48,12 @@ const stageLabels: Record<SubmissionStage, string> = {
   pricing: 'Pricing & Rating',
   quotation: 'Quotation',
   binding: 'Binding & Issuing',
+};
+
+const sourceConfig = {
+  email: { icon: Mail, label: 'Email', color: 'text-primary' },
+  portal: { icon: Globe, label: 'Portal', color: 'text-emerald-500' },
+  edi: { icon: FileCode, label: 'EDI/API', color: 'text-amber-500' },
 };
 
 // AI Summary generator based on submission data
@@ -166,6 +172,7 @@ export function SubmissionsList() {
             <TableHeader>
               <TableRow className="bg-muted/30">
                 <TableHead className="text-xs font-medium">Name Insured / Account</TableHead>
+                <TableHead className="text-xs font-medium">Source</TableHead>
                 <TableHead className="text-xs font-medium">Producer</TableHead>
                 <TableHead className="text-xs font-medium">Submission Date</TableHead>
                 <TableHead className="text-xs font-medium">Product</TableHead>
@@ -197,6 +204,18 @@ export function SubmissionsList() {
                         </p>
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const config = sourceConfig[submission.source];
+                      const Icon = config.icon;
+                      return (
+                        <Badge variant="outline" className={`gap-1.5 ${config.color}`}>
+                          <Icon className="w-3 h-3" />
+                          {config.label}
+                        </Badge>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     <div>
@@ -283,7 +302,7 @@ export function SubmissionsList() {
               ))}
               {filteredSubmissions.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     {submissions.length === 0 ? 'No submissions found' : 'No submissions match your filters'}
                   </TableCell>
                 </TableRow>
