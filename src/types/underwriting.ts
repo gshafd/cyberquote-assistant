@@ -2,6 +2,8 @@
 
 export type TeamRole = 'intake' | 'assignment' | 'underwriting' | 'ops';
 
+export type SubmissionSource = 'email' | 'portal' | 'edi';
+
 export type SubmissionStage = 
   | 'submission' 
   | 'data_collection' 
@@ -71,6 +73,51 @@ export interface EmailAttachment {
   type: 'acord' | 'questionnaire' | 'financials' | 'soc2' | 'edr_report' | 'other';
   size: string;
   content?: Record<string, unknown>;
+}
+
+// Portal Submission Types
+export interface PortalSubmission {
+  id: string;
+  brokerName: string;
+  producerName: string;
+  submissionId: string;
+  receivedAt: string;
+  metadataCompleteness: number; // 0-100
+  insuredName: string;
+  industry: string;
+  requestedLimit: number;
+  requestedDeductible: number;
+  effectiveDate: string;
+  expirationDate: string;
+  annualRevenue: number;
+  employeeCount: number;
+  state: string;
+  attachments: EmailAttachment[];
+  isIngested: boolean;
+  notes?: string;
+}
+
+// EDI / API Submission Types
+export interface EDISubmission {
+  id: string;
+  apiKeyName: string;
+  partnerName: string;
+  submissionId: string;
+  schemaVersion: string;
+  receivedAt: string;
+  structuredDataConfidence: number; // 0-100
+  insuredName: string;
+  industry: string;
+  requestedLimit: number;
+  requestedDeductible: number;
+  effectiveDate: string;
+  expirationDate: string;
+  annualRevenue: number;
+  employeeCount: number;
+  state: string;
+  acordData: Record<string, unknown>;
+  isIngested: boolean;
+  validationErrors?: string[];
 }
 
 export interface Producer {
@@ -212,7 +259,10 @@ export interface Submission {
   scenarioId: string;
   stage: SubmissionStage;
   substage: IntakeSubstage | AssignmentSubstage | UnderwritingSubstage;
-  sourceEmail: BrokerEmail;
+  source: SubmissionSource;
+  sourceEmail?: BrokerEmail;
+  sourcePortal?: PortalSubmission;
+  sourceEDI?: EDISubmission;
   producer: Producer;
   insured: Insured;
   controls: CyberControls;
