@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppState } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { StageProgress } from '@/components/StageProgress';
 import { ConfidenceBadge } from '@/components/ConfidenceBadge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { IntakeSubstages } from '@/components/substages/IntakeSubstages';
 import { IntakeSummaryReadOnly } from '@/components/substages/IntakeSummaryReadOnly';
 import { AssignmentSubstages } from '@/components/substages/AssignmentSubstages';
@@ -25,8 +26,15 @@ import {
   Globe,
   FileCode,
   ExternalLink,
+  Building2,
+  DollarSign,
+  Users,
+  MapPin,
+  Paperclip,
+  Shield,
+  User,
+  X,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { 
   Submission, 
   IntakeSubstage, 
@@ -46,8 +54,8 @@ const sourceIcons = {
 
 export function WorkbenchPage() {
   const { state, dispatch } = useAppState();
-  const navigate = useNavigate();
   const autoProgressingRef = useRef<Set<string>>(new Set());
+  const [viewingSubmission, setViewingSubmission] = useState<Submission | null>(null);
   
   // Helper functions for confidence checking
   const calculateStageConfidence = (sub: Submission): number => {
@@ -626,7 +634,7 @@ export function WorkbenchPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate('/submission-queue');
+                      setViewingSubmission(sub);
                     }}
                     className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 hover:underline transition-colors"
                   >
@@ -781,6 +789,346 @@ export function WorkbenchPage() {
           </div>
         </Card>
       )}
+
+      {/* Submission Details Dialog */}
+      <Dialog open={!!viewingSubmission} onOpenChange={() => setViewingSubmission(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              {viewingSubmission && (
+                <>
+                  {(() => {
+                    const sourceInfo = sourceIcons[viewingSubmission.source] || sourceIcons.email;
+                    const SourceIcon = sourceInfo.icon;
+                    return (
+                      <div className={`flex items-center gap-2 ${sourceInfo.color}`}>
+                        <SourceIcon size={20} />
+                        <span className="text-sm font-normal">{sourceInfo.label}</span>
+                      </div>
+                    );
+                  })()}
+                  <span>Original Submission Details</span>
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {viewingSubmission && (
+            <div className="space-y-6">
+              {/* Source-specific details */}
+              {viewingSubmission.source === 'email' && viewingSubmission.sourceEmail && (
+                <Card className="bg-blue-500/5 border-blue-500/20">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Mail size={18} className="text-blue-400" />
+                      Email Source
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">From</p>
+                        <p className="font-medium">{viewingSubmission.sourceEmail.from}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Received</p>
+                        <p className="font-medium">{format(new Date(viewingSubmission.sourceEmail.receivedAt), 'MMM dd, yyyy HH:mm')}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-sm">Subject</p>
+                      <p className="font-medium">{viewingSubmission.sourceEmail.subject}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-sm">Body</p>
+                      <p className="text-sm whitespace-pre-wrap bg-muted/30 p-3 rounded-md">{viewingSubmission.sourceEmail.body}</p>
+                    </div>
+                    {viewingSubmission.sourceEmail.attachments.length > 0 && (
+                      <div>
+                        <p className="text-muted-foreground text-sm mb-2 flex items-center gap-1">
+                          <Paperclip size={12} />
+                          Attachments ({viewingSubmission.sourceEmail.attachments.length})
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {viewingSubmission.sourceEmail.attachments.map((att, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {att.filename} ({att.size})
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {viewingSubmission.source === 'portal' && viewingSubmission.sourcePortal && (
+                <Card className="bg-green-500/5 border-green-500/20">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Globe size={18} className="text-green-400" />
+                      Portal Submission
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Broker</p>
+                        <p className="font-medium">{viewingSubmission.sourcePortal.brokerName}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Producer</p>
+                        <p className="font-medium">{viewingSubmission.sourcePortal.producerName}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Received At</p>
+                        <p className="font-medium">{format(new Date(viewingSubmission.sourcePortal.receivedAt), 'MMM dd, yyyy HH:mm')}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Metadata Completeness</p>
+                        <p className="font-medium">{viewingSubmission.sourcePortal.metadataCompleteness}%</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Status</p>
+                        <Badge variant={viewingSubmission.sourcePortal.isIngested ? "default" : "secondary"}>
+                          {viewingSubmission.sourcePortal.isIngested ? 'Ingested' : 'Pending'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {viewingSubmission.source === 'edi' && viewingSubmission.sourceEDI && (
+                <Card className="bg-purple-500/5 border-purple-500/20">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileCode size={18} className="text-purple-400" />
+                      EDI/API Submission
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Submission ID</p>
+                        <p className="font-medium font-mono">{viewingSubmission.sourceEDI.submissionId}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Received At</p>
+                        <p className="font-medium">{format(new Date(viewingSubmission.sourceEDI.receivedAt), 'MMM dd, yyyy HH:mm')}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Data Confidence</p>
+                        <p className="font-medium">{viewingSubmission.sourceEDI.structuredDataConfidence}%</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Partner</p>
+                        <p className="font-medium">{viewingSubmission.sourceEDI.partnerName}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Schema Version</p>
+                        <p className="font-medium">{viewingSubmission.sourceEDI.schemaVersion}</p>
+                      </div>
+                    </div>
+                    {viewingSubmission.sourceEDI.validationErrors && viewingSubmission.sourceEDI.validationErrors.length > 0 && (
+                      <div>
+                        <p className="text-muted-foreground text-sm mb-2 flex items-center gap-1 text-warning">
+                          <AlertTriangle size={12} />
+                          Validation Errors
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {viewingSubmission.sourceEDI.validationErrors.map((err, idx) => (
+                            <Badge key={idx} variant="destructive" className="text-xs">
+                              {err}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Insured Information */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Building2 size={18} />
+                    Insured Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Company Name</p>
+                      <p className="font-medium">{viewingSubmission.insured.name.value}</p>
+                      <span className="text-xs text-muted-foreground">{viewingSubmission.insured.name.confidence}% confidence</span>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Industry</p>
+                      <p className="font-medium">{viewingSubmission.insured.industry.value}</p>
+                      <span className="text-xs text-muted-foreground">{viewingSubmission.insured.industry.confidence}% confidence</span>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground flex items-center gap-1">
+                        <DollarSign size={12} />
+                        Annual Revenue
+                      </p>
+                      <p className="font-medium">${(viewingSubmission.insured.annualRevenue.value / 1000000).toFixed(1)}M</p>
+                      <span className="text-xs text-muted-foreground">{viewingSubmission.insured.annualRevenue.confidence}% confidence</span>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground flex items-center gap-1">
+                        <Users size={12} />
+                        Employees
+                      </p>
+                      <p className="font-medium">{viewingSubmission.insured.employeeCount.value.toLocaleString()}</p>
+                      <span className="text-xs text-muted-foreground">{viewingSubmission.insured.employeeCount.confidence}% confidence</span>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground flex items-center gap-1">
+                        <MapPin size={12} />
+                        Location
+                      </p>
+                      <p className="font-medium">{viewingSubmission.insured.city.value}, {viewingSubmission.insured.state.value}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground flex items-center gap-1">
+                        <Globe size={12} />
+                        Website
+                      </p>
+                      <p className="font-medium">{viewingSubmission.insured.website.value}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Producer Information */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <User size={18} />
+                    Producer Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Name</p>
+                      <p className="font-medium">{viewingSubmission.producer.name.value}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Agency</p>
+                      <p className="font-medium">{viewingSubmission.producer.agency.value}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Email</p>
+                      <p className="font-medium">{viewingSubmission.producer.email.value}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Tier</p>
+                      <Badge variant="outline" className="capitalize">{viewingSubmission.producer.tier.value}</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Security Controls */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Shield size={18} />
+                    Security Controls
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                      <span>MFA Enabled</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={viewingSubmission.controls.hasMFA.value ? "default" : "secondary"}>
+                          {viewingSubmission.controls.hasMFA.value ? 'Yes' : 'No'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{viewingSubmission.controls.hasMFA.confidence}%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                      <span>EDR Deployed</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={viewingSubmission.controls.hasEDR.value ? "default" : "secondary"}>
+                          {viewingSubmission.controls.hasEDR.value ? 'Yes' : 'No'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{viewingSubmission.controls.hasEDR.confidence}%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                      <span>SOC2 Certified</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={viewingSubmission.controls.hasSOC2.value ? "default" : "secondary"}>
+                          {viewingSubmission.controls.hasSOC2.value ? 'Yes' : 'No'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{viewingSubmission.controls.hasSOC2.confidence}%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                      <span>Backups</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={viewingSubmission.controls.hasBackups.value ? "default" : "secondary"}>
+                          {viewingSubmission.controls.hasBackups.value ? 'Yes' : 'No'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{viewingSubmission.controls.hasBackups.confidence}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Submission Metadata */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Calendar size={18} />
+                    Submission Metadata
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Submission ID</p>
+                      <p className="font-medium font-mono">{viewingSubmission.id}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Created At</p>
+                      <p className="font-medium">{format(new Date(viewingSubmission.createdAt), 'MMM dd, yyyy HH:mm:ss')}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Current Stage</p>
+                      <Badge variant="outline" className="capitalize">{viewingSubmission.stage.replace(/_/g, ' ')}</Badge>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Current Substage</p>
+                      <Badge variant="secondary" className="capitalize">{viewingSubmission.substage.replace(/_/g, ' ')}</Badge>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Overall Confidence</p>
+                      <ConfidenceBadge score={viewingSubmission.confidence} />
+                    </div>
+                    {viewingSubmission.requiresHumanReview && (
+                      <div>
+                        <p className="text-muted-foreground flex items-center gap-1 text-warning">
+                          <AlertTriangle size={12} />
+                          Review Reason
+                        </p>
+                        <p className="font-medium text-warning">{viewingSubmission.reviewReason}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
