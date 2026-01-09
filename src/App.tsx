@@ -57,17 +57,24 @@ function MainLayout({ children }: { children: React.ReactNode }) {
               )}
             </NavLink>
             <NavLink to="/queue">
-              {({ isActive }) => (
-                <Button variant={isActive ? "secondary" : "ghost"} size="sm" className="gap-2">
-                  <Mail size={16} />
-                  Submission Queue
-                  {state.emails.filter(e => !e.isRead && !e.isIngested).length > 0 && (
-                    <Badge className="h-5 w-5 p-0 justify-center bg-primary">
-                      {state.emails.filter(e => !e.isRead && !e.isIngested).length}
-                    </Badge>
-                  )}
-                </Button>
-              )}
+              {({ isActive }) => {
+                const pendingEmailCount = state.emails.filter(e => !e.isRead && !e.isIngested).length;
+                const pendingPortalCount = state.portalSubmissions.filter(p => !p.isIngested).length;
+                const pendingEDICount = state.ediSubmissions.filter(e => !e.isIngested).length;
+                const totalPending = pendingEmailCount + pendingPortalCount + pendingEDICount;
+                
+                return (
+                  <Button variant={isActive ? "secondary" : "ghost"} size="sm" className="gap-2">
+                    <Mail size={16} />
+                    Submission Queue
+                    {totalPending > 0 && (
+                      <Badge className="h-5 w-5 p-0 justify-center bg-primary">
+                        {totalPending}
+                      </Badge>
+                    )}
+                  </Button>
+                );
+              }}
             </NavLink>
             <NavLink to="/workbench">
               {({ isActive }) => (
