@@ -18,10 +18,10 @@ import {
 import { SubmissionStage } from '@/types/underwriting';
 import { Link } from 'react-router-dom';
 
-const stageConfig: Record<SubmissionStage, { label: string; icon: typeof FileUp; color: string }> = {
+// Exclude assignment from stage display
+const stageConfig: Record<Exclude<SubmissionStage, 'assignment'>, { label: string; icon: typeof FileUp; color: string }> = {
   submission: { label: 'Submission', icon: FileUp, color: 'text-blue-500' },
   data_collection: { label: 'Data Collection', icon: Database, color: 'text-amber-500' },
-  assignment: { label: 'Assignment', icon: Users, color: 'text-cyan-500' },
   risk_assessment: { label: 'Risk Assessment', icon: ShieldCheck, color: 'text-purple-500' },
   pricing: { label: 'Pricing', icon: Calculator, color: 'text-primary' },
   quotation: { label: 'Quotation', icon: FileText, color: 'text-emerald-500' },
@@ -146,7 +146,7 @@ export function MetricsDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {(Object.keys(stageConfig) as SubmissionStage[]).map((stage) => {
+            {(Object.keys(stageConfig) as Exclude<SubmissionStage, 'assignment'>[]).map((stage) => {
               const config = stageConfig[stage];
               const Icon = config.icon;
               // Calculate from actual submissions
