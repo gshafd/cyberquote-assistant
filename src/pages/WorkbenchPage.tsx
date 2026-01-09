@@ -21,7 +21,12 @@ import {
   Zap,
   Clock,
   Calendar,
+  Mail,
+  Globe,
+  FileCode,
+  ExternalLink,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Submission, 
   IntakeSubstage, 
@@ -32,8 +37,16 @@ import {
   SubmissionStage,
 } from '@/types/underwriting';
 
+// Source icon mapping
+const sourceIcons = {
+  email: { icon: Mail, label: 'Email', color: 'text-blue-400' },
+  portal: { icon: Globe, label: 'Portal', color: 'text-green-400' },
+  edi: { icon: FileCode, label: 'EDI/API', color: 'text-purple-400' },
+};
+
 export function WorkbenchPage() {
   const { state, dispatch } = useAppState();
+  const navigate = useNavigate();
   const autoProgressingRef = useRef<Set<string>>(new Set());
   
   // Helper functions for confidence checking
@@ -576,8 +589,20 @@ export function WorkbenchPage() {
                     <ConfidenceBadge score={sub.confidence} size="sm" />
                   </div>
                   
-                  {/* Ingestion datetime */}
+                  {/* Source and ingestion datetime */}
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                    {/* Source indicator */}
+                    {(() => {
+                      const sourceInfo = sourceIcons[sub.source] || sourceIcons.email;
+                      const SourceIcon = sourceInfo.icon;
+                      return (
+                        <div className={`flex items-center gap-1 ${sourceInfo.color}`} title={`Source: ${sourceInfo.label}`}>
+                          <SourceIcon size={10} />
+                          <span className="font-medium">{sourceInfo.label}</span>
+                        </div>
+                      );
+                    })()}
+                    <span className="text-muted-foreground/50">•</span>
                     <Calendar size={10} />
                     <span title={format(new Date(sub.createdAt), 'MMM dd, yyyy HH:mm')}>
                       {formatDistanceToNow(new Date(sub.createdAt), { addSuffix: true })}
@@ -588,7 +613,7 @@ export function WorkbenchPage() {
                     </span>
                   </div>
                   
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                     <Badge variant="outline" className="text-xs capitalize">
                       {sub.stage.replace(/_/g, ' ')}
                     </Badge>
@@ -596,6 +621,18 @@ export function WorkbenchPage() {
                       {sub.substage.replace(/_/g, ' ')}
                     </Badge>
                   </div>
+
+                  {/* Link to view submission details */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate('/submission-queue');
+                    }}
+                    className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 hover:underline transition-colors"
+                  >
+                    <ExternalLink size={10} />
+                    View original submission
+                  </button>
                   {sub.requiresHumanReview && (
                     <div className="mt-2 flex items-center gap-1 text-xs text-warning">
                       <AlertTriangle size={12} />
