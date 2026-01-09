@@ -93,6 +93,19 @@ export function SubmissionQueuePage() {
       controls.hasMFA.confidence < 70 ? 'MFA status' : 
       insured.annualRevenue.confidence < 70 ? 'Annual revenue' : null;
     
+    // Import coverages and quote based on scenario
+    let coverages, quote;
+    if (email.subject.includes('ACME')) {
+      coverages = await import('@/data/mockData').then(m => m.acmeCoverages);
+      quote = await import('@/data/mockData').then(m => m.acmeQuote);
+    } else if (email.subject.includes('Zenith')) {
+      coverages = await import('@/data/mockData').then(m => m.zenithCoverages);
+      quote = await import('@/data/mockData').then(m => m.zenithQuote);
+    } else {
+      coverages = await import('@/data/mockData').then(m => m.edgecaseCoverages);
+      quote = await import('@/data/mockData').then(m => m.edgecaseQuote);
+    }
+
     const submission: Submission = {
       id: `sub-${Date.now()}`,
       scenarioId,
@@ -104,6 +117,12 @@ export function SubmissionQueuePage() {
       insured,
       controls,
       riskProfile,
+      coverages,
+      quote: {
+        ...quote,
+        quoteNumber: `CYB-${new Date().getFullYear()}-${insured.name.value.split(' ')[0].toUpperCase().slice(0, 4)}-${String(Date.now()).slice(-4)}`,
+        status: 'pending_review',
+      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       history: [{
@@ -134,6 +153,9 @@ export function SubmissionQueuePage() {
     const avgConfidence = portal.metadataCompleteness;
     const hasLowConfidence = avgConfidence < 80;
     
+    // Import coverages and quote for portal submissions
+    const { zenithCoverages, zenithQuote } = await import('@/data/mockData');
+
     const submission: Submission = {
       id: `sub-${Date.now()}`,
       scenarioId: 'scenario-portal',
@@ -152,6 +174,12 @@ export function SubmissionQueuePage() {
       },
       controls: zenithControls,
       riskProfile: zenithRiskProfile,
+      coverages: zenithCoverages,
+      quote: {
+        ...zenithQuote,
+        quoteNumber: `CYB-${new Date().getFullYear()}-${portal.insuredName.split(' ')[0].toUpperCase().slice(0, 4)}-${String(Date.now()).slice(-4)}`,
+        status: 'pending_review',
+      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       history: [{
@@ -182,6 +210,9 @@ export function SubmissionQueuePage() {
     const avgConfidence = edi.structuredDataConfidence;
     const hasLowConfidence = avgConfidence < 85 || (edi.validationErrors?.length || 0) > 0;
     
+    // Import coverages and quote for EDI submissions
+    const { zenithCoverages, zenithQuote } = await import('@/data/mockData');
+
     const submission: Submission = {
       id: `sub-${Date.now()}`,
       scenarioId: 'scenario-edi',
@@ -200,6 +231,12 @@ export function SubmissionQueuePage() {
       },
       controls: zenithControls,
       riskProfile: zenithRiskProfile,
+      coverages: zenithCoverages,
+      quote: {
+        ...zenithQuote,
+        quoteNumber: `CYB-${new Date().getFullYear()}-${edi.insuredName.split(' ')[0].toUpperCase().slice(0, 4)}-${String(Date.now()).slice(-4)}`,
+        status: 'pending_review',
+      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       history: [{

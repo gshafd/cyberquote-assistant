@@ -1164,6 +1164,13 @@ export const initialSubmissions: Submission[] = [
       state: createAIField('WA', 98, 'State', 'ACORD.json', '"state": "WA"'),
     },
     controls: acmeControls,
+    riskProfile: acmeRiskProfile,
+    coverages: zenithCoverages,
+    quote: {
+      ...zenithQuote,
+      quoteNumber: 'CYB-2025-RETL-001',
+      status: 'pending_review',
+    },
     createdAt: '2025-12-26T16:00:00Z',
     updatedAt: '2025-12-26T16:00:00Z',
     history: [],
@@ -1190,6 +1197,12 @@ export const initialSubmissions: Submission[] = [
     },
     controls: zenithControls,
     riskProfile: zenithRiskProfile,
+    coverages: zenithCoverages,
+    quote: {
+      ...zenithQuote,
+      quoteNumber: 'CYB-2025-CYBER-001',
+      status: 'pending_review',
+    },
     createdAt: '2025-12-25T11:00:00Z',
     updatedAt: '2025-12-26T15:00:00Z',
     history: [
@@ -1232,6 +1245,12 @@ export const initialSubmissions: Submission[] = [
     },
     controls: zenithControls,
     riskProfile: acmeRiskProfile,
+    coverages: acmeCoverages,
+    quote: {
+      ...acmeQuote,
+      quoteNumber: 'CYB-2025-MEDI-001',
+      status: 'pending_review',
+    },
     createdAt: '2025-12-22T09:00:00Z',
     updatedAt: '2025-12-25T14:00:00Z',
     history: [
