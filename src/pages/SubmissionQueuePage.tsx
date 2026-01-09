@@ -254,7 +254,7 @@ export function SubmissionQueuePage() {
       {/* Summary Section */}
       <Card className="bg-gradient-to-r from-card to-muted/30">
         <CardContent className="p-6">
-          <div className="grid grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 gap-8">
             {/* Channel Breakdown */}
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
@@ -291,36 +291,6 @@ export function SubmissionQueuePage() {
                 <div>
                   <p className="text-2xl font-bold">{pendingEDICount}</p>
                   <p className="text-xs text-muted-foreground">pending</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="border-l border-border" />
-            
-            {/* Totals */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground">Yet to Ingest</h3>
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-warning/10">
-                  <Clock size={20} className="text-warning" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-warning">{totalPending}</p>
-                  <p className="text-xs text-muted-foreground">submissions</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground">Ingested</h3>
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-success/10">
-                  <CheckCircle size={20} className="text-success" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-success">{totalIngested}</p>
-                  <p className="text-xs text-muted-foreground">submissions</p>
                 </div>
               </div>
             </div>
