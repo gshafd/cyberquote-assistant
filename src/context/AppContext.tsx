@@ -8,6 +8,8 @@ import {
   Underwriter,
   BrokerEmail,
   SubmissionStage,
+  PortalSubmission,
+  EDISubmission,
 } from '@/types/underwriting';
 import {
   brokerEmails,
@@ -16,6 +18,8 @@ import {
   workbenchMetrics,
   initialSubmissions,
   initialFeedbackLog,
+  portalSubmissions as initialPortalSubmissions,
+  ediSubmissions as initialEDISubmissions,
 } from '@/data/mockData';
 
 interface AppState {
@@ -27,6 +31,8 @@ interface AppState {
   metrics: WorkbenchMetrics;
   knowledgeBases: KnowledgeBase[];
   underwriters: Underwriter[];
+  portalSubmissions: PortalSubmission[];
+  ediSubmissions: EDISubmission[];
 }
 
 type Action =
@@ -37,7 +43,9 @@ type Action =
   | { type: 'UPDATE_EMAIL'; payload: BrokerEmail }
   | { type: 'ADD_FEEDBACK'; payload: FeedbackEntry }
   | { type: 'UPDATE_METRICS'; payload: Partial<WorkbenchMetrics> }
-  | { type: 'ADVANCE_STAGE'; payload: { submissionId: string; newStage: SubmissionStage; substage: string } };
+  | { type: 'ADVANCE_STAGE'; payload: { submissionId: string; newStage: SubmissionStage; substage: string } }
+  | { type: 'UPDATE_PORTAL_SUBMISSION'; payload: PortalSubmission }
+  | { type: 'UPDATE_EDI_SUBMISSION'; payload: EDISubmission };
 
 // Safe initial state with fallback values
 const getInitialState = (): AppState => {
@@ -51,6 +59,8 @@ const getInitialState = (): AppState => {
       metrics: workbenchMetrics,
       knowledgeBases: knowledgeBases || [],
       underwriters: underwriters || [],
+      portalSubmissions: initialPortalSubmissions || [],
+      ediSubmissions: initialEDISubmissions || [],
     };
   } catch (error) {
     console.error('Error initializing app state:', error);
@@ -97,6 +107,8 @@ const getInitialState = (): AppState => {
       },
       knowledgeBases: [],
       underwriters: [],
+      portalSubmissions: [],
+      ediSubmissions: [],
     };
   }
 };
@@ -190,6 +202,22 @@ function appReducer(state: AppState, action: Action): AppState {
         },
       };
     }
+
+    case 'UPDATE_PORTAL_SUBMISSION':
+      return {
+        ...state,
+        portalSubmissions: state.portalSubmissions.map((p) =>
+          p.id === action.payload.id ? action.payload : p
+        ),
+      };
+
+    case 'UPDATE_EDI_SUBMISSION':
+      return {
+        ...state,
+        ediSubmissions: state.ediSubmissions.map((e) =>
+          e.id === action.payload.id ? action.payload : e
+        ),
+      };
 
     default:
       return state;

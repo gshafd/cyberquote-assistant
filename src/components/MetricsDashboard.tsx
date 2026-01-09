@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useAppState } from '@/context/AppContext';
 import { 
   FileUp, 
@@ -10,9 +11,12 @@ import {
   TrendingUp,
   Clock,
   Zap,
-  Users
+  Users,
+  Mail,
+  Globe,
 } from 'lucide-react';
 import { SubmissionStage } from '@/types/underwriting';
+import { Link } from 'react-router-dom';
 
 const stageConfig: Record<SubmissionStage, { label: string; icon: typeof FileUp; color: string }> = {
   submission: { label: 'Submission', icon: FileUp, color: 'text-blue-500' },
@@ -26,7 +30,7 @@ const stageConfig: Record<SubmissionStage, { label: string; icon: typeof FileUp;
 
 export function MetricsDashboard() {
   const { state } = useAppState();
-  const { metrics, submissions, underwriters } = state;
+  const { metrics, submissions, underwriters, emails, portalSubmissions, ediSubmissions } = state;
 
   const totalSubmissions = submissions.length;
   const avgConfidence = submissions.length > 0 
@@ -34,6 +38,12 @@ export function MetricsDashboard() {
     : 0;
   const activeUnderwriters = underwriters.filter(u => u.workload > 0).length;
   const pendingReview = submissions.filter(s => s.requiresHumanReview).length;
+
+  // Pending queue counts (non-ingested items)
+  const pendingEmailCount = emails.filter(e => !e.isIngested).length;
+  const pendingPortalCount = portalSubmissions.filter(p => !p.isIngested).length;
+  const pendingEDICount = ediSubmissions.filter(e => !e.isIngested).length;
+  const totalPendingQueue = pendingEmailCount + pendingPortalCount + pendingEDICount;
 
   return (
     <div className="space-y-4">
@@ -95,6 +105,39 @@ export function MetricsDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Pending Queue Summary */}
+      <Card className="bg-gradient-to-r from-muted/30 to-muted/10 border-muted">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Submission Queue</CardTitle>
+            <Link to="/queue">
+              <Badge variant="outline" className="text-xs hover:bg-muted cursor-pointer">
+                View Queue →
+              </Badge>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <Badge variant="outline" className="gap-2 px-3 py-1.5 text-sm">
+              <Mail size={14} className="text-primary" />
+              {pendingEmailCount} Email
+            </Badge>
+            <Badge variant="outline" className="gap-2 px-3 py-1.5 text-sm">
+              <Globe size={14} className="text-emerald-500" />
+              {pendingPortalCount} Portal
+            </Badge>
+            <Badge variant="outline" className="gap-2 px-3 py-1.5 text-sm">
+              <Zap size={14} className="text-amber-500" />
+              {pendingEDICount} EDI/API
+            </Badge>
+            <div className="ml-auto text-sm text-muted-foreground">
+              Total: <span className="font-semibold text-foreground">{totalPendingQueue}</span> pending
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stage Distribution */}
       <Card>

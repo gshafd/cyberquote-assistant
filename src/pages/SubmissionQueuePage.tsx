@@ -41,8 +41,6 @@ import {
   edgecaseControls,
   edgecaseRiskProfile,
   producers,
-  portalSubmissions as mockPortalSubmissions,
-  ediSubmissions as mockEDISubmissions,
 } from '@/data/mockData';
 
 export function SubmissionQueuePage() {
@@ -54,8 +52,8 @@ export function SubmissionQueuePage() {
   const [selectedEmail, setSelectedEmail] = useState<BrokerEmail | null>(null);
   const [selectedPortal, setSelectedPortal] = useState<PortalSubmission | null>(null);
   const [selectedEDI, setSelectedEDI] = useState<EDISubmission | null>(null);
-  const [portalSubmissions, setPortalSubmissions] = useState<PortalSubmission[]>(mockPortalSubmissions);
-  const [ediSubmissions, setEDISubmissions] = useState<EDISubmission[]>(mockEDISubmissions);
+
+  const { portalSubmissions, ediSubmissions } = state;
 
   const handleIngestEmail = async (email: BrokerEmail) => {
     setIngesting(email.id);
@@ -171,7 +169,7 @@ export function SubmissionQueuePage() {
     };
 
     dispatch({ type: 'ADD_SUBMISSION', payload: submission });
-    setPortalSubmissions(prev => prev.map(p => p.id === portal.id ? { ...p, isIngested: true } : p));
+    dispatch({ type: 'UPDATE_PORTAL_SUBMISSION', payload: { ...portal, isIngested: true } });
     setIngesting(null);
     setSelectedPortal(null);
   };
@@ -221,7 +219,7 @@ export function SubmissionQueuePage() {
     };
 
     dispatch({ type: 'ADD_SUBMISSION', payload: submission });
-    setEDISubmissions(prev => prev.map(e => e.id === edi.id ? { ...e, isIngested: true } : e));
+    dispatch({ type: 'UPDATE_EDI_SUBMISSION', payload: { ...edi, isIngested: true } });
     setIngesting(null);
     setSelectedEDI(null);
   };
