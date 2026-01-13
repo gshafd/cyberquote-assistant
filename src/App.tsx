@@ -136,7 +136,7 @@ function AppContent() {
   );
 }
 
-// Main App component with providers
+// Main App component with all providers properly ordered
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
