@@ -219,13 +219,13 @@ export function IntakeSubstages({ submission, currentSubstage, onFieldEdit, onAd
             <div className="space-y-1">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Effective Date</span>
               <p className="font-medium text-foreground">
-                {submission.quote?.effectiveDate || 'TBD'}
+                {submission.quote?.effectiveDate || submission.sourcePortal?.effectiveDate || submission.sourceEDI?.effectiveDate || 'TBD'}
               </p>
             </div>
             <div className="space-y-1">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Expiration Date</span>
               <p className="font-medium text-foreground">
-                {submission.quote?.expirationDate || 'TBD'}
+                {submission.quote?.expirationDate || submission.sourcePortal?.expirationDate || submission.sourceEDI?.expirationDate || 'TBD'}
               </p>
             </div>
           </CardContent>
