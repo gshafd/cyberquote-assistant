@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAppState } from '@/context/AppContext';
-import { BrokerEmail, PortalSubmission, EDISubmission, Submission } from '@/types/underwriting';
+import { BrokerEmail, PortalSubmission, EDISubmission, Submission, EmailAttachment } from '@/types/underwriting';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,8 +52,150 @@ export function SubmissionQueuePage() {
   const [selectedEmail, setSelectedEmail] = useState<BrokerEmail | null>(null);
   const [selectedPortal, setSelectedPortal] = useState<PortalSubmission | null>(null);
   const [selectedEDI, setSelectedEDI] = useState<EDISubmission | null>(null);
+  const [selectedAttachment, setSelectedAttachment] = useState<EmailAttachment | null>(null);
 
   const { portalSubmissions, ediSubmissions } = state;
+
+  const getAttachmentMockContent = (att: EmailAttachment): string => {
+    switch (att.type) {
+      case 'acord':
+        return `ACORD APPLICATION FOR COMMERCIAL INSURANCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Document: ${att.filename}
+Form: ACORD 125 (2016/03) + Cyber Liability Supplement
+
+SECTION I - APPLICANT INFORMATION
+  Named Insured: [Extracted during ingestion]
+  DBA: N/A
+  Mailing Address: [See submission details]
+  
+SECTION II - POLICY INFORMATION
+  Policy Type: Cyber Liability
+  Proposed Effective Date: [See submission details]
+  Proposed Expiration Date: [See submission details]
+
+SECTION III - COVERAGE REQUESTED
+  Aggregate Limit: [See submission details]
+  Retention/Deductible: [See submission details]
+  Retroactive Date: Full Prior Acts
+
+SECTION IV - BUSINESS INFORMATION
+  Nature of Business: [See submission details]
+  Annual Revenue: [See submission details]
+  Number of Employees: [See submission details]
+
+[Document continues... ${att.size}]`;
+      case 'questionnaire':
+        return `CYBER SECURITY CONTROLS QUESTIONNAIRE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Document: ${att.filename}
+
+1. NETWORK SECURITY
+   1.1 Multi-Factor Authentication (MFA): [Pending verification]
+   1.2 Endpoint Detection & Response (EDR): [Pending verification]
+   1.3 Firewall Configuration: Enterprise-grade
+   
+2. DATA PROTECTION
+   2.1 Encryption at Rest: AES-256
+   2.2 Encryption in Transit: TLS 1.3
+   2.3 Data Classification: Implemented
+   
+3. INCIDENT RESPONSE
+   3.1 IR Plan: Documented and tested
+   3.2 Last Tabletop Exercise: Within 12 months
+   3.3 Cyber Insurance Carrier Notification: 72 hours
+
+4. BUSINESS CONTINUITY
+   4.1 Backup Frequency: Daily
+   4.2 Recovery Time Objective: 4 hours
+   4.3 Disaster Recovery Site: Active-Passive
+
+[Document continues... ${att.size}]`;
+      case 'soc2':
+        return `SOC 2 TYPE II REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Document: ${att.filename}
+Audit Period: 12 months
+
+INDEPENDENT SERVICE AUDITOR'S REPORT
+
+To the Management of [Insured]:
+
+Scope: Trust Services Criteria - Security, Availability, 
+       Confidentiality, Processing Integrity
+
+Opinion: In our opinion, the description fairly presents
+the system and the controls were suitably designed and
+operating effectively throughout the audit period.
+
+KEY FINDINGS:
+  ✓ Security controls operating effectively
+  ✓ Access management procedures in place
+  ✓ Change management process documented
+  ✓ Incident response procedures tested
+  ⚠ Minor observation: Password rotation policy
+
+TRUST SERVICES CRITERIA COVERAGE:
+  CC1 - Control Environment ............... Pass
+  CC2 - Communication & Information ....... Pass
+  CC3 - Risk Assessment ................... Pass
+  CC5 - Control Activities ................ Pass
+  CC6 - Logical & Physical Access ......... Pass
+  CC7 - System Operations ................. Pass
+  CC8 - Change Management ................. Pass
+  CC9 - Risk Mitigation ................... Pass
+
+[Full report: ${att.size}]`;
+      case 'edr_report':
+        return `ENDPOINT DETECTION & RESPONSE (EDR) REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Document: ${att.filename}
+
+DEPLOYMENT SUMMARY
+  Platform: [EDR Vendor]
+  Coverage: Enterprise-wide
+  Endpoints Protected: [See submission]
+  Last Updated: Current
+
+THREAT DETECTION (Last 90 Days)
+  Alerts Generated: 142
+  Critical Alerts: 3
+  Resolved: 100%
+  Mean Time to Detect: 4.2 minutes
+  Mean Time to Respond: 18 minutes
+
+POLICY COMPLIANCE
+  Agent Health: 98.5%
+  Signature Updates: Automatic
+  Behavioral Analysis: Enabled
+
+[Full report: ${att.size}]`;
+      case 'financials':
+        return `FINANCIAL STATEMENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Document: ${att.filename}
+
+CONSOLIDATED BALANCE SHEET
+  Total Assets: [See submission details]
+  Total Liabilities: [See submission details]
+  Stockholders' Equity: [See submission details]
+
+INCOME STATEMENT
+  Revenue: [See submission details]
+  Operating Expenses: [See submission details]
+  Net Income: [See submission details]
+
+[Full report: ${att.size}]`;
+      default:
+        return `DOCUMENT PREVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Document: ${att.filename}
+Type: ${att.type}
+Size: ${att.size}
+
+[Document content available after ingestion]`;
+    }
+  };
 
   const handleIngestEmail = async (email: BrokerEmail) => {
     setIngesting(email.id);
@@ -405,7 +547,8 @@ export function SubmissionQueuePage() {
                                 {email.attachments.map(att => (
                                   <div
                                     key={att.id}
-                                    className="flex items-center gap-1.5 bg-muted/50 border border-border/50 rounded px-2 py-1 text-xs"
+                                    onClick={(e) => { e.stopPropagation(); setSelectedAttachment(att); }}
+                                    className="flex items-center gap-1.5 bg-muted/50 border border-border/50 rounded px-2 py-1 text-xs cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-colors"
                                   >
                                     <FileText size={12} className="text-primary shrink-0" />
                                     <span className="truncate max-w-[140px]">{att.filename}</span>
@@ -517,7 +660,8 @@ export function SubmissionQueuePage() {
                                 {portal.attachments.map(att => (
                                   <div
                                     key={att.id}
-                                    className="flex items-center gap-1.5 bg-muted/50 border border-border/50 rounded px-2 py-1 text-xs"
+                                    onClick={(e) => { e.stopPropagation(); setSelectedAttachment(att); }}
+                                    className="flex items-center gap-1.5 bg-muted/50 border border-border/50 rounded px-2 py-1 text-xs cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-colors"
                                   >
                                     <FileText size={12} className="text-primary shrink-0" />
                                     <span className="truncate max-w-[140px]">{att.filename}</span>
@@ -712,7 +856,8 @@ export function SubmissionQueuePage() {
                     {selectedEmail.attachments.map(att => (
                       <div
                         key={att.id}
-                        className="flex items-center gap-3 bg-muted/30 rounded-lg p-3 border border-border/50"
+                        onClick={() => setSelectedAttachment(att)}
+                        className="flex items-center gap-3 bg-muted/30 rounded-lg p-3 border border-border/50 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-colors"
                       >
                         <FileText size={24} className="text-primary" />
                         <div className="flex-1 min-w-0">
@@ -722,6 +867,7 @@ export function SubmissionQueuePage() {
                         <Badge variant="outline" className="text-xs capitalize">
                           {att.type}
                         </Badge>
+                        <Eye size={14} className="text-muted-foreground" />
                       </div>
                     ))}
                   </div>
@@ -830,7 +976,8 @@ export function SubmissionQueuePage() {
                     {selectedPortal.attachments.map(att => (
                       <div
                         key={att.id}
-                        className="flex items-center gap-3 bg-muted/30 rounded-lg p-3 border border-border/50"
+                        onClick={() => setSelectedAttachment(att)}
+                        className="flex items-center gap-3 bg-muted/30 rounded-lg p-3 border border-border/50 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-colors"
                       >
                         <FileText size={24} className="text-primary" />
                         <div className="flex-1 min-w-0">
@@ -840,6 +987,7 @@ export function SubmissionQueuePage() {
                         <Badge variant="outline" className="text-xs capitalize">
                           {att.type}
                         </Badge>
+                        <Eye size={14} className="text-muted-foreground" />
                       </div>
                     ))}
                   </div>
@@ -970,6 +1118,51 @@ export function SubmissionQueuePage() {
                       Ingest Submission
                     </>
                   )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Attachment Preview Dialog */}
+      <Dialog open={!!selectedAttachment} onOpenChange={() => setSelectedAttachment(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText size={18} className="text-primary" />
+              {selectedAttachment?.filename}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedAttachment && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <Badge variant="outline" className="capitalize">{selectedAttachment.type}</Badge>
+                <span>{selectedAttachment.size}</span>
+              </div>
+              <div className="bg-muted/30 border border-border rounded-lg p-4">
+                <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed">
+                  {getAttachmentMockContent(selectedAttachment)}
+                </pre>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setSelectedAttachment(null)}>
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    const content = getAttachmentMockContent(selectedAttachment);
+                    const blob = new Blob([content], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = selectedAttachment.filename;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  <Download size={14} className="mr-2" />
+                  Download
                 </Button>
               </div>
             </div>
