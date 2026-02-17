@@ -5,89 +5,89 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 /* Enterprise Underwriting Workbench Design System
-   Theme: Professional Dark with Cyber/Tech Accents
+   Theme: Modern Light Enterprise
    All colors in HSL format
 */
 
 @layer base {
   :root {
-    /* Core backgrounds - Deep slate with blue undertones */
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    /* Core backgrounds - Clean white/light gray */
+    --background: 220 20% 97%;
+    --foreground: 222 47% 11%;
 
-    /* Card surfaces - Slightly elevated */
-    --card: 222 47% 13%;
-    --card-foreground: 210 40% 98%;
+    /* Card surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
     /* Popover/dropdown surfaces */
-    --popover: 222 47% 15%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Primary - Vibrant cyan for key actions */
-    --primary: 189 94% 43%;
-    --primary-foreground: 222 47% 11%;
+    /* Primary - Deep teal-blue for key actions */
+    --primary: 205 78% 38%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Muted blue-gray */
-    --secondary: 217 33% 22%;
-    --secondary-foreground: 210 40% 90%;
+    /* Secondary - Light blue-gray */
+    --secondary: 214 20% 92%;
+    --secondary-foreground: 222 47% 18%;
 
-    /* Muted - Subdued backgrounds */
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 55%;
+    /* Muted - Soft gray backgrounds */
+    --muted: 220 14% 93%;
+    --muted-foreground: 220 9% 46%;
 
-    /* Accent - Electric blue for highlights */
-    --accent: 217 91% 60%;
-    --accent-foreground: 210 40% 98%;
+    /* Accent - Bright blue for highlights */
+    --accent: 214 32% 91%;
+    --accent-foreground: 222 47% 18%;
 
     /* Destructive - Warning red */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
     /* Success - Green for approvals */
-    --success: 142 76% 36%;
-    --success-foreground: 210 40% 98%;
+    --success: 152 60% 36%;
+    --success-foreground: 0 0% 100%;
 
     /* Warning - Amber for caution */
     --warning: 38 92% 50%;
     --warning-foreground: 222 47% 11%;
 
     /* Confidence levels */
-    --confidence-high: 142 76% 36%;
+    --confidence-high: 152 60% 36%;
     --confidence-medium: 38 92% 50%;
-    --confidence-low: 0 84% 60%;
+    --confidence-low: 0 72% 51%;
 
     /* Stage colors */
-    --stage-intake: 262 83% 58%;
-    --stage-assignment: 217 91% 60%;
-    --stage-underwriting: 189 94% 43%;
+    --stage-intake: 262 60% 52%;
+    --stage-assignment: 217 70% 50%;
+    --stage-underwriting: 205 78% 38%;
 
     /* Borders and inputs */
-    --border: 217 33% 25%;
-    --input: 217 33% 20%;
-    --ring: 189 94% 43%;
+    --border: 220 13% 87%;
+    --input: 220 13% 87%;
+    --ring: 205 78% 38%;
 
     --radius: 0.5rem;
 
     /* Sidebar theming */
-    --sidebar-background: 222 47% 9%;
-    --sidebar-foreground: 210 40% 85%;
-    --sidebar-primary: 189 94% 43%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 90%;
-    --sidebar-border: 217 33% 20%;
-    --sidebar-ring: 189 94% 43%;
+    --sidebar-background: 220 20% 95%;
+    --sidebar-foreground: 222 47% 18%;
+    --sidebar-primary: 205 78% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 20% 92%;
+    --sidebar-accent-foreground: 222 47% 18%;
+    --sidebar-border: 220 13% 87%;
+    --sidebar-ring: 205 78% 38%;
 
     /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(189 94% 43%), hsl(217 91% 60%));
-    --gradient-card: linear-gradient(180deg, hsl(222 47% 15%), hsl(222 47% 11%));
-    --gradient-glow: radial-gradient(circle at center, hsl(189 94% 43% / 0.15), transparent 70%);
+    --gradient-primary: linear-gradient(135deg, hsl(205 78% 38%), hsl(217 70% 50%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 20% 97%));
+    --gradient-glow: radial-gradient(circle at center, hsl(205 78% 38% / 0.08), transparent 70%);
 
     /* Shadows */
-    --shadow-sm: 0 1px 2px hsl(222 47% 5% / 0.5);
-    --shadow-md: 0 4px 12px hsl(222 47% 5% / 0.4);
-    --shadow-lg: 0 8px 24px hsl(222 47% 5% / 0.5);
-    --shadow-glow: 0 0 20px hsl(189 94% 43% / 0.3);
+    --shadow-sm: 0 1px 2px hsl(220 20% 50% / 0.06);
+    --shadow-md: 0 4px 12px hsl(220 20% 50% / 0.08);
+    --shadow-lg: 0 8px 24px hsl(220 20% 50% / 0.1);
+    --shadow-glow: 0 0 20px hsl(205 78% 38% / 0.12);
 
     /* Typography */
     --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
@@ -95,7 +95,7 @@
   }
 
   .dark {
-    /* Already dark theme by default */
+    /* Dark mode override if ever needed */
   }
 }
 
@@ -176,7 +176,7 @@
   .editable-field::after {
     content: '';
     @apply absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 opacity-0 transition-opacity;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2'%3E%3Cpath d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'/%3E%3Cpath d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230c6ca5' stroke-width='2'%3E%3Cpath d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'/%3E%3Cpath d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z'/%3E%3C/svg%3E");
   }
 
   .editable-field:hover::after {
