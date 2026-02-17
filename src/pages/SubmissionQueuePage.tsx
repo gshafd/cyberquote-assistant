@@ -400,6 +400,23 @@ export function SubmissionQueuePage() {
                                 </span>
                               )}
                             </div>
+                            {email.attachments.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {email.attachments.map(att => (
+                                  <div
+                                    key={att.id}
+                                    className="flex items-center gap-1.5 bg-muted/50 border border-border/50 rounded px-2 py-1 text-xs"
+                                  >
+                                    <FileText size={12} className="text-primary shrink-0" />
+                                    <span className="truncate max-w-[140px]">{att.filename}</span>
+                                    <Badge variant="outline" className="text-[10px] px-1 py-0 capitalize">
+                                      {att.type}
+                                    </Badge>
+                                    <span className="text-muted-foreground">{att.size}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <Button
                             size="sm"
@@ -495,6 +512,23 @@ export function SubmissionQueuePage() {
                                 {portal.metadataCompleteness}%
                               </span>
                             </div>
+                            {portal.attachments && portal.attachments.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {portal.attachments.map(att => (
+                                  <div
+                                    key={att.id}
+                                    className="flex items-center gap-1.5 bg-muted/50 border border-border/50 rounded px-2 py-1 text-xs"
+                                  >
+                                    <FileText size={12} className="text-primary shrink-0" />
+                                    <span className="truncate max-w-[140px]">{att.filename}</span>
+                                    <Badge variant="outline" className="text-[10px] px-1 py-0 capitalize">
+                                      {att.type}
+                                    </Badge>
+                                    <span className="text-muted-foreground">{att.size}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <div className="flex flex-col gap-2">
                             <Button
@@ -784,6 +818,31 @@ export function SubmissionQueuePage() {
               {selectedPortal.notes && (
                 <div className="bg-muted/30 p-3 rounded-lg text-sm">
                   <strong>Notes:</strong> {selectedPortal.notes}
+                </div>
+              )}
+              {selectedPortal.attachments && selectedPortal.attachments.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <Paperclip size={14} />
+                    Attachments ({selectedPortal.attachments.length})
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedPortal.attachments.map(att => (
+                      <div
+                        key={att.id}
+                        className="flex items-center gap-3 bg-muted/30 rounded-lg p-3 border border-border/50"
+                      >
+                        <FileText size={24} className="text-primary" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{att.filename}</p>
+                          <p className="text-xs text-muted-foreground">{att.size}</p>
+                        </div>
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {att.type}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               <div className="flex justify-end">
