@@ -9,6 +9,7 @@ import {
   CheckCircle,
   Shield,
   Building2,
+  Calendar,
 } from 'lucide-react';
 
 interface IntakeSummaryReadOnlyProps {
@@ -193,6 +194,39 @@ export function IntakeSummaryReadOnly({ submission }: IntakeSummaryReadOnlyProps
             formatValue={(val) => Number(val).toLocaleString()}
             onSave={(val, comment) => handleFieldSave('insured.employeeCount', val, comment)}
           />
+        </CardContent>
+      </Card>
+
+      {/* Product & Effective Period */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calendar size={18} className="text-success" />
+            Product & Effective Period
+            <Badge variant="outline" className="text-success border-success">Complete</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Product</span>
+            <p className="font-medium text-foreground">Cyber Liability</p>
+          </div>
+          <div className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Coverage Type</span>
+            <p className="font-medium text-foreground">Primary</p>
+          </div>
+          <div className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Effective Date</span>
+            <p className="font-medium text-foreground">
+              {submission.quote?.effectiveDate || submission.sourcePortal?.effectiveDate || submission.sourceEDI?.effectiveDate || 'TBD'}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Expiration Date</span>
+            <p className="font-medium text-foreground">
+              {submission.quote?.expirationDate || submission.sourcePortal?.expirationDate || submission.sourceEDI?.expirationDate || 'TBD'}
+            </p>
+          </div>
         </CardContent>
       </Card>
 
